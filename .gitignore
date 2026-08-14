@@ -1,3 +1,16 @@
 .venv/
 __pycache__/
 *.pyc
+
+# Hugging Face / model artifacts
+.cache/
+checkpoints/
+outputs/
+*.safetensors
+*.bin
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
