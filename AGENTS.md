@@ -45,8 +45,9 @@ responsible for accepting code, design decisions, experiment results, and Git op
   Wait for approval before creating it. Permission to inspect GitHub, propose issues,
   or implement a change is not permission to create an issue. Do not infer approval
   from silence or create additional issues beyond the scope the owner approved.
-- Assistants may inspect content through read-only file tools and make explicitly
-  authorized file edits. Terminal execution follows the owner-first rules below.
+- Assistants may inspect content through read-only file tools or read-only terminal
+  commands independently and make explicitly authorized file edits. Other terminal
+  execution follows the owner-first rules below.
   Code-editing permission does not authorize training, large downloads, or publication.
 - Do not commit, push, pull, merge, rebase, create/delete branches, create/merge pull
   requests, create/update GitHub issues, or release unless the owner explicitly
@@ -67,17 +68,41 @@ responsible for accepting code, design decisions, experiment results, and Git op
 - Never interpret an assistant's own proposal as a reviewed experimental result or
   an owner-approved methodology change. Mark unsettled design choices as proposed.
 
-## Owner-first terminal execution
+## Terminal execution permissions
 
-- No AI assistant runs a terminal command for the first time in this project.
-  This applies to coding, reviews, read-only inspection, Git, checks, installs,
-  locking/syncing, scripts, diagnostics, and commands issued through agent tools.
-- Give the project owner the exact suitable command, one command per code block,
-  with its purpose, working directory, impact, and expected result. The owner runs
-  it first and supplies the output. Check that output before proposing another change.
-- Only after the owner has run the command and supplied its output may an assistant
-  repeat that same command to verify the result. Prior execution by an assistant
-  does not count as owner execution or establish permission.
+### Independent read-only inspection
+
+- Assistants may run read-only inspection commands without asking permission and
+  without requiring a prior owner run or supplied output. This includes
+  `git status --short --branch`, other read-only `git status` forms, `git diff`,
+  `git log`, `git show`, `git ls-files`, and `git branch --show-current`.
+- Assistants may read and search ordinary project files using `cat`, `sed -n`,
+  `head`, `tail`, `rg`, `ls`, and equivalent read-only file tools. Inspect files
+  directly instead of asking the owner to run a command merely to display content.
+- This permission covers inspection only. Do not use writing options, output-file
+  flags, modifying shell redirection, or chained mutating commands under this exception.
+  Do not execute project code, tests, scripts, or diagnostics as a substitute for reading.
+- Protect secrets and sensitive data during inspection. Read-only access does not
+  authorize exposing credentials, tokens, private records, or restricted data.
+
+### Owner-first commands and consequential operations
+
+- Unit tests, integration tests, Ruff, MyPy, builds, runtime/CUDA diagnostics,
+  dependency installs, lock generation, environment synchronization, data processing,
+  model inference/training, and other execution commands remain owner-first.
+  An assistant must not run them for the first time in this project.
+- Git-changing commands also remain owner-first and require explicit authorization.
+  Examples include `git add`, `git commit`, `git fetch`, `git pull`, `git push`,
+  `git switch`, `git checkout`, `git merge`, `git rebase`, `git stash`, `git reset`,
+  `git restore`, `git clean`, and branch creation/deletion. A tool's name alone does
+  not make an operation read-only; classify it by its actual effect.
+- For owner-first commands, give the project owner the exact suitable command,
+  one command per code block, with its purpose, working directory, impact, and
+  expected result. The owner runs it first and supplies the output. Check that
+  output before proposing another change.
+- Only after the owner has run an owner-first command and supplied its output may
+  an assistant repeat that same command to verify the result. Prior execution by
+  an assistant does not count as owner execution or establish permission.
 - Before repeating, confirm that the command, arguments, environment settings,
   working directory, and relevant implementation still match the owner's run.
   A changed script, materially changed implementation, or changed command needs
@@ -87,8 +112,9 @@ responsible for accepting code, design decisions, experiment results, and Git op
   Any consequential operation still needs the owner's explicit authorization.
 - Never bypass these rules by moving a command into Python, a script, subprocess,
   another shell, a scheduled job, a tool wrapper, or another agent.
-- When the required owner execution/output is missing, provide the command and
-  wait. Do not execute it, claim it passed, or infer permission from silence.
+- When required owner execution/output is missing for an owner-first command,
+  provide the command and wait. Do not execute it, claim it passed, or infer
+  permission from silence.
 
 ## Environment and implementation
 
@@ -131,6 +157,8 @@ responsible for accepting code, design decisions, experiment results, and Git op
   configured quality gates. An assistant may repeat them only under the owner-first
   terminal rules; writing a check does not authorize executing it.
   Unit tests are isolated; integration tests exercise real component boundaries.
+- Read-only inspection, including reviewing files and `git diff`, is independently
+  permitted under the terminal execution rules; it is not a test or runtime check.
 - Default tests require no network, real datasets, downloaded weights, or GPU.
   CUDA tests require `--run-cuda`; an explicit CUDA test must fail when CUDA is unavailable.
 - Ordinary continuous integration (CI) runs CPU checks only. Never add model training,
