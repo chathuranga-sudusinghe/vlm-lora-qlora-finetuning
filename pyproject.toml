@@ -37,7 +37,8 @@ cuda = [
     "bitsandbytes==0.50.1",
 ]
 
-# The diagnostic entry point is introduced with its implementation in issue #6.
+[project.scripts]
+vlm-check-device = "vlm_finetuning.cli:main"
 
 [dependency-groups]
 dev = ["pytest==9.1.1", "ruff==0.16.3", "mypy==2.4.0"]
@@ -83,8 +84,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-# Issue #6 adds tests to the checking scope when those files are introduced.
-files = ["src/vlm_finetuning"]
+files = ["src/vlm_finetuning", "tests"]
 mypy_path = "src"
 
 [[tool.mypy.overrides]]

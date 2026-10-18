@@ -10,14 +10,16 @@ Structured attributes can support product-catalog ingestion, indexing, search, a
 data-quality workflows. Those workflows motivate the task; this repository focuses
 on extraction and its evaluation.
 
-**Status:** working rules, the code license, architecture, and the dataset/experiment
-specification are merged through issues #13 and #4. Their unmeasured settings remain
-proposals. Issue #5 reviews dependency tooling and runtime profiles; its configuration
-is a local draft with owner-verified CPU/CUDA dependency imports and scoped quality
-checks, awaiting final review. Diagnostics, tests, and continuous integration remain
-separate drafts under #6 and #7. Dataset preparation, controlled evaluation, and
-adapter training remain planned. Model fit,
-practical training cost, and extraction improvements have not been established.
+**Status:** working rules, the code license, architecture, dataset/experiment
+specification, and dependency tooling are merged through issues #13, #4, and #5.
+Unmeasured experiment settings remain proposals. This branch introduces the issue #6
+diagnostic and test implementation. Locked package synchronization, Ruff lint and
+formatting, MyPy, and all 13 synthetic tests passed. Independent review reported no
+remaining implementation findings; owner acceptance and merge remain pending.
+Hosted continuous integration belongs to #7. Dataset preparation, controlled
+evaluation, and adapter training remain planned. Model fit, practical training
+cost, and extraction improvements have not
+been established.
 
 ## Research questions
 
@@ -85,7 +87,7 @@ records the actual GPU, driver capability, installed PyTorch runtime, and propos
 upgrade candidate. The CUDA version displayed by `nvidia-smi` is distinct from the
 runtime used by a PyTorch wheel.
 
-### Dependency profiles (issue #5 draft)
+### Dependency profiles
 
 Use Python 3.12 and uv 0.13.0 with `pyproject.toml` and `uv.lock`. The migration keeps
 the existing direct ML dependency pins and the CUDA 12.8 baseline. CUDA 13.0 remains
@@ -125,9 +127,10 @@ CPU-only installation. A plain sync without a runtime extra, or a sync using
 `--only-group dev`, removes ML packages from the selected environment. Keep the
 CUDA extra when synchronizing the laptop's development environment.
 
-Follow [AGENTS.md](AGENTS.md): the owner runs each first lock/sync/check command
-and supplies its output. Any use of a location outside the repository requires
-prior explicit owner approval; temporary validation is not an exception.
+Follow [AGENTS.md](AGENTS.md) for execution permissions. Lock generation, package
+sync, Ruff, and MyPy remain owner-first; eligible synthetic unit/integration tests
+may run independently. Real-model/data commands and outside-repository access
+require prior explicit owner approval.
 
 **Owner-run validation (2026-10-18):**
 
@@ -158,10 +161,10 @@ in the later actual-model gate. The inspected TRL 1.10.0 code rejects the
 `assistant_only_loss=True` flag for vision datasets; this issue neither upgrades
 dependencies nor implements an alternative masking path.
 
-Regenerate the lockfile after approved dependency edits, review its sources and
-transitive changes, then verify the profiles before removing the requirements files
-from the committed project. Commit the approved configuration and generated lockfile
-together; do not maintain parallel dependency lists after the verified migration.
+Regenerate the lockfile after approved dependency edits and review its sources and
+transitive changes. Commit configuration and any resulting lockfile changes together;
+the verified migration removed the requirements files, so do not reintroduce parallel
+dependency lists.
 
 ## Checks
 
@@ -174,11 +177,12 @@ and hosted checks belong to
 These checks are planned to avoid model/dataset downloads or model training.
 Generic CPU/CUDA diagnostics do not establish actual VLM feasibility or extraction quality.
 
-Issue #5 configures the tools and pytest marker conventions. MyPy targets the available
-package; issue #6 adds test files to its scope and introduces the diagnostic command.
-Do not report tests or an installed CLI as committed capabilities while their files
-remain local drafts. `docs/development.md` remains assigned to #6; it does not replace
-the owner-first review of the setup examples above.
+Issue #5 configures the tools and pytest marker conventions. This issue #6 branch
+adds tests to MyPy's scope, a `vlm-check-device` console entry point, and
+`python -m vlm_finetuning`. See the [development guide](docs/development.md) for
+commands, test boundaries, and the verification record. Sync the package after the
+entry-point change before testing the installed console command. These branch changes
+await owner acceptance; hosted CI belongs to #7.
 
 Follow [AGENTS.md](AGENTS.md) for owner-first execution and review requirements.
 
@@ -188,19 +192,25 @@ Follow [AGENTS.md](AGENTS.md) for owner-first execution and review requirements.
 AGENTS.md                     Working rules for assistants and contributors
 LICENSE                       MIT license for project code and documentation
 README.md                     Orientation, current status, and repository map
+pyproject.toml                Dependencies, console entry point, and tool configuration
+uv.lock                       Locked CPU/CUDA dependency graph
+.python-version               Python version selection
+src/vlm_finetuning/            Device diagnostics and CLI introduced by issue #6
+tests/                        Synthetic unit/integration tests introduced by issue #6
 docs/
   README.md                  Documentation index and ownership
   architecture.md            Hardware target, boundaries, and planned components
   dataset.md                 Provenance, proposed task contract, and split policy
   experiments.md             Full questions, proposed controls, metrics, and run plan
   references.md              Source verification and its limits
+  development.md             Local setup, checks, and verification boundaries (#6)
   decisions/
     README.md                Decision index and maintenance rules
     DR-001-...md             Foundation rationale and decision status
     DR-002-...md             Dataset and proposed experiment rationale
 ```
 
-This map shows the merged documentation, including the proposed issue #4 protocol.
+This map includes the merged foundation and issue #6 additions on this branch.
 The existing `src/baseline_inference.py` remains a standalone local experiment for
 later migration; it is not the controlled structured baseline. Work is separated as follows:
 
@@ -208,8 +218,8 @@ later migration; it is not the controlled structured baseline. Work is separated
 |---|---|
 | #13: overview and architecture direction, merged | `README.md`, `docs/architecture.md`, `docs/README.md` |
 | #4: detailed specification, merged; run settings proposed | `docs/dataset.md`, `docs/experiments.md`, `docs/references.md`, `docs/decisions/DR-002-product-attribute-experiment.md` |
-| #5: dependency tooling, local validation recorded; final review pending | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
-| #6: diagnostics and tests, planned | `src/vlm_finetuning/`, `tests/unit/`, `tests/integration/`, `docs/development.md` |
+| #5: dependency tooling, merged; owner-run validation recorded | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
+| #6: diagnostics and tests, locally validated and independently reviewed; owner acceptance pending | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
 | #7: continuous integration, planned | `.github/workflows/ci.yml` |
 
 Local drafts are not part of an issue's commit merely because they exist in the
@@ -217,8 +227,8 @@ working directory. Preserve them and stage only files assigned to the active iss
 
 ## Next milestone
 
-Validate and merge dependency tooling under issue #5, then diagnostics and CPU CI
-under #6 and #7. Then implement the audit and frozen manifests,
+Complete owner acceptance and merge of diagnostics/tests under issue #6, then CPU CI under #7.
+Then implement the audit and frozen manifests,
 verify the actual model, establish both base conditions, and run owner-approved
 adapter pilots before the final comparison. Keep held-out test data out of tuning.
 
