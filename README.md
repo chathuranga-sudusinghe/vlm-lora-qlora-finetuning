@@ -13,11 +13,12 @@ on extraction and its evaluation.
 **Status:** working rules, the code license, architecture, dataset/experiment
 specification, dependency tooling, and device diagnostics/tests are merged through
 issues #13, #4, #5, and #6. Unmeasured experiment settings remain proposals. Local
-Ruff lint/formatting, MyPy, and all 13 synthetic tests passed for #6. This issue #7
-branch adds CPU-only continuous integration with dependency caching; hosted checks
-and cache measurements remain pending. Dataset preparation, controlled evaluation,
-and adapter training remain planned. Model fit, practical training cost, and
-extraction improvements have not been established.
+Ruff lint/formatting, MyPy, and all 13 synthetic tests passed for #6. Issue #7's
+CPU-only continuous integration workflow is merged. Hosted quality/unit and CPU
+integration jobs passed, and cold/warm dependency-cache behavior was observed;
+dependency-file cache invalidation remains pending. Dataset preparation,
+controlled evaluation, and adapter training remain planned. Model fit, practical
+training cost, and extraction improvements have not been established.
 
 ## Research questions
 
@@ -182,8 +183,8 @@ commands, test boundaries, and the verification record. Sync the package after t
 entry-point change before testing the installed console command. The issue #7
 workflow separates quality/unit checks from CPU integration, pins verified action
 releases, and caches dependencies while still running every check. See the
-[CI guide](docs/development.md#continuous-integration) for boundaries and pending
-hosted cache evidence.
+[CI guide](docs/development.md#continuous-integration) for boundaries, hosted results,
+cache timings, and the remaining cache-invalidation evidence gap.
 
 Follow [AGENTS.md](AGENTS.md) for owner-first execution and review requirements.
 
@@ -198,7 +199,7 @@ uv.lock                       Locked CPU/CUDA dependency graph
 .python-version               Python version selection
 src/vlm_finetuning/            Device diagnostics and CLI introduced by issue #6
 tests/                        Synthetic unit/integration tests introduced by issue #6
-.github/workflows/ci.yml       Quality/unit and CPU integration jobs (#7 branch)
+.github/workflows/ci.yml       Merged quality/unit and CPU integration jobs (#7)
 docs/
   README.md                  Documentation index and ownership
   architecture.md            Hardware target, boundaries, and planned components
@@ -212,7 +213,7 @@ docs/
     DR-002-...md             Dataset and proposed experiment rationale
 ```
 
-This map includes the merged foundation/diagnostics and issue #7's workflow draft.
+This map includes the merged foundation, diagnostics, and issue #7 workflow.
 The existing `src/baseline_inference.py` remains a standalone local experiment for
 later migration; it is not the controlled structured baseline. Work is separated as follows:
 
@@ -222,17 +223,19 @@ later migration; it is not the controlled structured baseline. Work is separated
 | #4: detailed specification, merged; run settings proposed | `docs/dataset.md`, `docs/experiments.md`, `docs/references.md`, `docs/decisions/DR-002-product-attribute-experiment.md` |
 | #5: dependency tooling, merged; owner-run validation recorded | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
 | #6: diagnostics and tests, merged; local validation and review recorded | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
-| #7: CPU continuous integration and caching, branch implementation; hosted evidence pending | `.github/workflows/ci.yml`, relevant development/status documentation |
+| #7: CPU continuous integration merged; hosted checks and cold/warm caches observed; dependency-file invalidation pending | `.github/workflows/ci.yml`, relevant development/status documentation |
 
 Local drafts are not part of an issue's commit merely because they exist in the
 working directory. Preserve them and stage only files assigned to the active issue.
 
 ## Next milestone
 
-Validate and review the workflow under issue #7, then observe hosted checks and cache behavior.
-Then implement the audit and frozen manifests,
-verify the actual model, establish both base conditions, and run owner-approved
-adapter pilots before the final comparison. Keep held-out test data out of tuning.
+The next implementation milestone is the dataset audit, task validation, and frozen
+manifests under a separate owner-approved issue and branch. Keep issue #7's remaining
+cache-invalidation check pending until an approved dependency-file change exercises
+it. Then implement shared generation/scoring, verify the actual model, establish
+both base conditions, and run owner-approved adapter pilots before the final
+comparison. Keep held-out test data out of tuning.
 
 ## License
 
