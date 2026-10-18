@@ -11,14 +11,55 @@ responsible for accepting code, design decisions, experiment results, and Git op
   experiments, licensing, and Git/GitHub operations belong to the project owner.
 - Codex is the coding agent: it may implement explicitly authorized changes within
   the agreed issue and branch. It cannot approve its own work or finalize decisions.
-- Claude and ChatGPT are independent review tools: they provide findings, technical
-  challenges, and recommendations for the owner to evaluate. They do not edit files
-  or finalize changes unless the owner explicitly changes their assigned roles.
+- Google Antigravity, Claude, and ChatGPT are independent review tools: they provide
+  findings, technical challenges, and recommendations for the owner to evaluate.
+  They do not edit files or finalize changes unless the owner explicitly changes
+  their assigned roles.
 - All assistants follow the same owner-first command rules and approval boundaries.
   Their recommendations do not become decisions until the owner accepts them.
 - Use tool names only where technically relevant, such as defining these roles.
   Do not add AI tool/vendor branding, promotional text, generated-by labels, or
   AI co-author trailers to project artifacts unless the owner explicitly requests it.
+
+## Independent review workflow
+
+- In the owner's current setup, Codex and Google Antigravity can inspect the local
+  repository and GitHub; ChatGPT reviews GitHub content only. Confirm actual access
+  in each session, including Claude's available access. These are workflow assignments,
+  not guarantees about a product's capabilities or permission to perform operations.
+- The owner selects the reviewer and review scope. Reviewers may independently
+  inspect files and run the routine commands permitted under Terminal execution
+  permissions, including eligible unit/integration tests, but may not edit
+  implementation files. Real-model/data commands require explicit owner permission;
+  other owner-first commands follow the rules below. These boundaries apply equally
+  to reviewers and coding agents. Do not contact another tool or send repository
+  content to it without the owner's explicit authorization.
+- Identify the issue, branch, commit SHA, and files under review. For local reviews,
+  distinguish committed code, uncommitted changes, and relevant untracked drafts.
+  For GitHub reviews, identify the pull request and head commit when available;
+  a GitHub-only reviewer cannot verify changes that exist only on the laptop.
+- Reviewers independently inspect the available implementation, issue criteria,
+  and tests. Report actionable findings with file/line references, severity, and
+  proposed fixes, following the owner's file-by-file review format. State what was
+  inspected, what checks actually ran, and what access or evidence was unavailable.
+  A review of an earlier revision does not establish the correctness of later edits.
+- Codex independently evaluates each reviewer finding against the current code,
+  requirements, tests, and available evidence. Do not automatically agree with a
+  reviewer or reject a finding to defend existing work. Distinguish confirmed
+  defects, evidence gaps, optional improvements, and preferences; reuse valid
+  outputs already supplied for unchanged behavior.
+- Before applying reviewer recommendations, present a comparison table containing
+  the reviewer finding, Codex's assessment (agree, partly agree, or disagree),
+  supporting evidence, and the proposed action. Explain disagreements and identify
+  which changes are required and which are optional.
+- After presenting the table, ask the owner for explicit approval of the proposed
+  changes and wait before editing files to implement them. Receiving a review,
+  agreeing with a reviewer, or earlier general coding permission does not authorize
+  reviewer-driven edits. Implement only the approved changes within the agreed
+  scope. If no changes are needed, state that without requesting unnecessary approval.
+- Recheck affected behavior after meaningful approved fixes. Reviewer agreement
+  does not replace tests or owner approval; the owner decides whether findings are
+  accepted and whether the change is ready to commit or merge.
 
 ## Scope and proportionality
 
@@ -45,9 +86,9 @@ responsible for accepting code, design decisions, experiment results, and Git op
   Wait for approval before creating it. Permission to inspect GitHub, propose issues,
   or implement a change is not permission to create an issue. Do not infer approval
   from silence or create additional issues beyond the scope the owner approved.
-- Assistants may inspect content through read-only file tools or read-only terminal
-  commands independently and make explicitly authorized file edits. Other terminal
-  execution follows the owner-first rules below.
+- Assistants may independently inspect content and run routine terminal checks
+  permitted below, and may make explicitly authorized file edits. Protected
+  execution follows the terminal permission rules below.
   Code-editing permission does not authorize training, large downloads, or publication.
 - Do not commit, push, pull, merge, rebase, create/delete branches, create/merge pull
   requests, create/update GitHub issues, or release unless the owner explicitly
@@ -70,7 +111,7 @@ responsible for accepting code, design decisions, experiment results, and Git op
 
 ## Terminal execution permissions
 
-### Independent read-only inspection
+### Commands agents may run independently
 
 - Assistants may run read-only inspection commands without asking permission and
   without requiring a prior owner run or supplied output. This includes
@@ -79,27 +120,70 @@ responsible for accepting code, design decisions, experiment results, and Git op
 - Assistants may read and search ordinary project files using `cat`, `sed -n`,
   `head`, `tail`, `rg`, `ls`, and equivalent read-only file tools. Inspect files
   directly instead of asking the owner to run a command merely to display content.
-- This permission covers inspection only. Do not use writing options, output-file
-  flags, modifying shell redirection, or chained mutating commands under this exception.
-  Do not execute project code, tests, scripts, or diagnostics as a substitute for reading.
+- Independent command permission applies within this repository. Reading or
+  searching files or folders outside it requires prior explicit owner permission,
+  as described under Environment and implementation.
+- Coding agents and independent reviewers may also run routine, bounded checks
+  using the existing environment: command help/version queries, installed-package
+  metadata inspection, import probes, and tiny synthetic CPU/CUDA diagnostics.
+  No prior owner run or output is required for these permitted checks. Inspect
+  unfamiliar scripts before executing them to establish their actual effects.
+- Unit and integration tests, including pytest, may run independently when they
+  use only mocks, synthetic fixtures, or tiny synthetic tensor operations, with
+  no real project model, pretrained weights, real dataset, or external download.
+  Inspect the selected tests and fixtures first; a test name or marker alone does
+  not establish permission. Run only the eligible subset if a suite mixes safe
+  tests with real-model/data workloads. Keep resource use bounded.
+- These routine checks must not install packages, download data or model weights,
+  change project source/data or Git state, train models, or perform costly work.
+  Use repository-local paths for any generated output. Tool caches do not authorize
+  unapproved outside-repository access. Protected commands cannot be disguised as
+  routine checks or hidden inside scripts, aliases, or chained commands.
 - Protect secrets and sensitive data during inspection. Read-only access does not
   authorize exposing credentials, tokens, private records, or restricted data.
 
-### Owner-first commands and consequential operations
+### Real-model and real-data commands: explicit owner permission
 
-- Unit tests, integration tests, Ruff, MyPy, builds, runtime/CUDA diagnostics,
-  dependency installs, lock generation, environment synchronization, data processing,
-  model inference/training, and other execution commands remain owner-first.
-  An assistant must not run them for the first time in this project.
+- No AI tool may run commands involving real project models or real datasets
+  without prior explicit permission from the human project owner. This includes
+  model/weight downloads and loading, training/fine-tuning, inference, validation,
+  testing, evaluation, benchmarking, and real-data preparation or processing.
+  The rule applies to coding agents, independent reviewers, and delegated tools.
+- Calling a command a unit test, integration test, smoke test, or validation check
+  does not exempt it. Using synthetic inputs with a real project model still
+  requires permission. If a command's effects are unclear, inspect it first and
+  obtain permission before running any real-model/data workload.
+- Present the exact commands, working directory, models/data involved, scope,
+  and expected compute, download, and disk impact before requesting approval.
+  The owner may run the commands or explicitly authorize the agent to run them.
+  General coding/review permission and earlier execution outputs do not authorize
+  a new real-model/data run. Stay within the approved operation and scope.
+
+### Other owner-first commands and consequential operations
+
+- Ruff lint/format commands and MyPy type checks remain owner-first for both coding
+  agents and independent reviewers. The owner must receive the commands, run them
+  first, and supply the output before agent verification. Eligible synthetic unit
+  and integration tests follow the independent permission above.
+- Builds, dependency installs, lock generation, and environment synchronization
+  also remain owner-first. Real-model/data workloads follow the explicit-permission
+  section above.
 - Git-changing commands also remain owner-first and require explicit authorization.
   Examples include `git add`, `git commit`, `git fetch`, `git pull`, `git push`,
   `git switch`, `git checkout`, `git merge`, `git rebase`, `git stash`, `git reset`,
   `git restore`, `git clean`, and branch creation/deletion. A tool's name alone does
   not make an operation read-only; classify it by its actual effect.
-- For owner-first commands, give the project owner the exact suitable command,
-  one command per code block, with its purpose, working directory, impact, and
-  expected result. The owner runs it first and supplies the output. Check that
-  output before proposing another change.
+- Give the owner the complete known set of owner-first commands for the current task
+  in one ordered batch, with one command per code block. State the working directory,
+  purpose, impact, expected results, and when to stop on failure. The owner runs the
+  batch and supplies the combined outputs. Do not split an already-known sequence
+  into repeated one- or two-command handoffs. A later command may be withheld when
+  it genuinely depends on an earlier result; explain that dependency.
+- Review the owner's outputs before making dependent changes. While waiting,
+  continue useful independent inspection and permitted routine checks. Do not
+  repeatedly ask for commands or outputs already supplied for unchanged code and
+  environment, or stop a review merely because a permitted command has not yet
+  been run by the owner.
 - Only after the owner has run an owner-first command and supplied its output may
   an assistant repeat that same command to verify the result. Prior execution by
   an assistant does not count as owner execution or establish permission.
@@ -113,8 +197,9 @@ responsible for accepting code, design decisions, experiment results, and Git op
 - Never bypass these rules by moving a command into Python, a script, subprocess,
   another shell, a scheduled job, a tool wrapper, or another agent.
 - When required owner execution/output is missing for an owner-first command,
-  provide the command and wait. Do not execute it, claim it passed, or infer
-  permission from silence.
+  provide the complete applicable batch and leave dependent validation pending.
+  Do not execute it, claim it passed, or infer permission from silence. Complete
+  the remaining independent work and clearly identify the pending evidence.
 
 ## Environment and implementation
 
@@ -122,6 +207,20 @@ responsible for accepting code, design decisions, experiment results, and Git op
   requirements files. Follow the runtime-profile commands in [development](docs/development.md).
 - Keep code and virtual environments in Linux/WSL paths. Do not share a Windows
   virtual environment with WSL. Never assume Windows and Linux paths are interchangeable.
+- Keep project-related files, environments, and outputs inside this repository by
+  default. Files and folders outside it may be inspected or used only with the
+  owner's prior explicit permission. Before reading, searching, creating, changing,
+  deleting, or installing anything outside the repository, explain the paths,
+  purpose, and intended operation, ask the owner, and wait for approval. This also
+  applies before giving the owner commands that use those locations. Permission to
+  inspect does not authorize changes or installation.
+- This project-work rule is not a blanket ban on separate owner-approved tasks
+  involving personal or global configuration outside the repository. Such access
+  still requires prior explicit permission for the relevant paths and operations.
+- Example: creating `/tmp/vlm-issue-5-cpu`, `/tmp/vlm-issue-5-cuda`, or
+  `/tmp/vlm-issue-5-quality` to install dependencies and run temporary checks requires
+  prior explicit owner permission. Approval to check dependencies does not authorize
+  using folders outside the repository.
 - Keep reusable implementation in `src/vlm_finetuning/`. Imports must not download
   files, initialize GPUs, run inference, or start training. Use explicit entry points.
 - Use type hints and the configured Ruff, MyPy, and pytest checks. Keep missing-import
@@ -153,21 +252,23 @@ responsible for accepting code, design decisions, experiment results, and Git op
 
 ## Validation and execution limits
 
-- Ask the owner to run targeted checks after meaningful code changes, then the
-  configured quality gates. An assistant may repeat them only under the owner-first
-  terminal rules; writing a check does not authorize executing it.
+- After meaningful code changes, run eligible synthetic unit/integration tests
+  independently and give the owner the remaining owner-first quality gates as an
+  ordered batch. Real-model/data tests require explicit approval before execution.
   Unit tests are isolated; integration tests exercise real component boundaries.
-- Read-only inspection, including reviewing files and `git diff`, is independently
-  permitted under the terminal execution rules; it is not a test or runtime check.
+- Read-only inspection and permitted routine runtime checks may be performed
+  independently by coding agents and reviewers under the terminal execution rules.
+  Report static inspection, runtime probes, and test-suite results separately.
 - Default tests require no network, real datasets, downloaded weights, or GPU.
   CUDA tests require `--run-cuda`; an explicit CUDA test must fail when CUDA is unavailable.
 - Ordinary continuous integration (CI) runs CPU checks only. Never add model training,
   external-data scoring, or secret-dependent tests to pull-request CI by default.
 - Explain the impact before large installs/downloads or expensive checks. Obtain explicit
   owner authorization before model training, sweeps, costly cloud work, or large data jobs.
-- A tiny synthetic device forward/backward diagnostic follows the same owner-first
-  command rules. It is not evidence that a VLM training configuration fits or that
-  all CUDA extensions work.
+- A tiny synthetic device forward/backward diagnostic may run independently using
+  the existing environment, including through an eligible unit/integration test.
+  CUDA opt-in controls still apply. Neither establishes that a VLM training
+  configuration fits or that all CUDA extensions work.
 
 ## Documentation and handoff
 
