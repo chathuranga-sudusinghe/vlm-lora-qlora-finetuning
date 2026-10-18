@@ -11,15 +11,13 @@ data-quality workflows. Those workflows motivate the task; this repository focus
 on extraction and its evaluation.
 
 **Status:** working rules, the code license, architecture, dataset/experiment
-specification, and dependency tooling are merged through issues #13, #4, and #5.
-Unmeasured experiment settings remain proposals. This branch introduces the issue #6
-diagnostic and test implementation. Locked package synchronization, Ruff lint and
-formatting, MyPy, and all 13 synthetic tests passed. Independent review reported no
-remaining implementation findings; owner acceptance and merge remain pending.
-Hosted continuous integration belongs to #7. Dataset preparation, controlled
-evaluation, and adapter training remain planned. Model fit, practical training
-cost, and extraction improvements have not
-been established.
+specification, dependency tooling, and device diagnostics/tests are merged through
+issues #13, #4, #5, and #6. Unmeasured experiment settings remain proposals. Local
+Ruff lint/formatting, MyPy, and all 13 synthetic tests passed for #6. This issue #7
+branch adds CPU-only continuous integration with dependency caching; hosted checks
+and cache measurements remain pending. Dataset preparation, controlled evaluation,
+and adapter training remain planned. Model fit, practical training cost, and
+extraction improvements have not been established.
 
 ## Research questions
 
@@ -174,15 +172,18 @@ diagnostics and tests belong to
 [issue #6](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/6),
 and hosted checks belong to
 [issue #7](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/7).
-These checks are planned to avoid model/dataset downloads or model training.
+These checks avoid model/dataset downloads and model training.
 Generic CPU/CUDA diagnostics do not establish actual VLM feasibility or extraction quality.
 
-Issue #5 configures the tools and pytest marker conventions. This issue #6 branch
-adds tests to MyPy's scope, a `vlm-check-device` console entry point, and
-`python -m vlm_finetuning`. See the [development guide](docs/development.md) for
+Issues #5 and #6 configure the tools, pytest markers, MyPy's test scope,
+the `vlm-check-device` console entry point, and `python -m vlm_finetuning`.
+See the [development guide](docs/development.md) for
 commands, test boundaries, and the verification record. Sync the package after the
-entry-point change before testing the installed console command. These branch changes
-await owner acceptance; hosted CI belongs to #7.
+entry-point change before testing the installed console command. The issue #7
+workflow separates quality/unit checks from CPU integration, pins verified action
+releases, and caches dependencies while still running every check. See the
+[CI guide](docs/development.md#continuous-integration) for boundaries and pending
+hosted cache evidence.
 
 Follow [AGENTS.md](AGENTS.md) for owner-first execution and review requirements.
 
@@ -197,6 +198,7 @@ uv.lock                       Locked CPU/CUDA dependency graph
 .python-version               Python version selection
 src/vlm_finetuning/            Device diagnostics and CLI introduced by issue #6
 tests/                        Synthetic unit/integration tests introduced by issue #6
+.github/workflows/ci.yml       Quality/unit and CPU integration jobs (#7 branch)
 docs/
   README.md                  Documentation index and ownership
   architecture.md            Hardware target, boundaries, and planned components
@@ -210,7 +212,7 @@ docs/
     DR-002-...md             Dataset and proposed experiment rationale
 ```
 
-This map includes the merged foundation and issue #6 additions on this branch.
+This map includes the merged foundation/diagnostics and issue #7's workflow draft.
 The existing `src/baseline_inference.py` remains a standalone local experiment for
 later migration; it is not the controlled structured baseline. Work is separated as follows:
 
@@ -219,15 +221,15 @@ later migration; it is not the controlled structured baseline. Work is separated
 | #13: overview and architecture direction, merged | `README.md`, `docs/architecture.md`, `docs/README.md` |
 | #4: detailed specification, merged; run settings proposed | `docs/dataset.md`, `docs/experiments.md`, `docs/references.md`, `docs/decisions/DR-002-product-attribute-experiment.md` |
 | #5: dependency tooling, merged; owner-run validation recorded | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
-| #6: diagnostics and tests, locally validated and independently reviewed; owner acceptance pending | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
-| #7: continuous integration, planned | `.github/workflows/ci.yml` |
+| #6: diagnostics and tests, merged; local validation and review recorded | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
+| #7: CPU continuous integration and caching, branch implementation; hosted evidence pending | `.github/workflows/ci.yml`, relevant development/status documentation |
 
 Local drafts are not part of an issue's commit merely because they exist in the
 working directory. Preserve them and stage only files assigned to the active issue.
 
 ## Next milestone
 
-Complete owner acceptance and merge of diagnostics/tests under issue #6, then CPU CI under #7.
+Validate and review the workflow under issue #7, then observe hosted checks and cache behavior.
 Then implement the audit and frozen manifests,
 verify the actual model, establish both base conditions, and run owner-approved
 adapter pilots before the final comparison. Keep held-out test data out of tuning.

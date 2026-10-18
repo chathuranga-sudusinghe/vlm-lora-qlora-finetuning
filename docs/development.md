@@ -152,10 +152,129 @@ quantization and actual-model feasibility require separate owner-approved checks
 
 [Issue #7](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/7)
 owns the hosted workflow, action-version verification, and dependency-cache behavior.
-The planned jobs cover quality/unit checks and CPU integration. The local CI draft
-is outside issue #6. Local validation does not establish that hosted CI has passed.
+The [workflow](../.github/workflows/ci.yml) is implemented on the issue #7 branch;
+hosted execution and cache measurements remain pending. It runs on pull requests,
+pushes to `main`, and manual dispatch once the workflow is available on the default
+branch. Feature-branch pushes rely on the pull-request trigger to avoid duplicate
+push/PR jobs.
+
+| Job | Locked environment | Checks |
+|---|---|---|
+| Quality and unit tests | `uv sync --locked --only-group dev` | Scoped Ruff lint/formatting, strict MyPy, isolated unit tests |
+| CPU integration | `uv sync --locked --extra cpu --group dev` | Assert PyTorch has no CUDA runtime, then run integration tests excluding CUDA |
+
+Both jobs use ordinary `ubuntu-latest` x86-64 runners, Python from `.python-version`,
+and uv 0.13.0. They have read-only repository permissions, checkout credentials are
+not persisted, and job timeouts are bounded. Dependency installation requires
+network access; Hugging Face model/dataset access is offline during execution.
+Neither job loads a project model, uses real data, or requests a GPU.
+
+### Action releases
+
+Verified against official releases on 2026-10-18; the workflow pins their complete
+commit SHAs rather than mutable version tags:
+
+| Action | Release |
+|---|---|
+| `actions/checkout` | [v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1) |
+| `actions/setup-python` | [v7.0.0](https://github.com/actions/setup-python/releases/tag/v7.0.0) |
+| `astral-sh/setup-uv` | [v10.3.0](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.0) |
+
+These actions use Node.js 24; checkout/setup-python document runner 2.327.1 or later.
+The workflow targets GitHub-hosted runners, not an unverified self-hosted installation.
+The action version is separate from the installed uv 0.13.0 version. See the
+[checkout requirements](https://github.com/actions/checkout/blob/v7.0.1/README.md)
+and [setup-python requirements](https://github.com/actions/setup-python/blob/v7.0.0/README.md).
+
+### Dependency cache
+
+The setup-uv action caches dependency artifacts in the runner's repository-local
+`.cache/uv`, with distinct `quality` and `cpu` key suffixes. Its key includes the
+platform/OS version, architecture, selected Python version, and a hash of `uv.lock`
+and `pyproject.toml`. The resolved setup-python version is supplied to setup-uv.
+The installed `.venv` is recreated and synchronized on each fresh runner.
+
+Cache pruning is explicitly disabled to retain downloaded wheels, including the
+CPU runtime. This trades cache storage/transfer size for fewer package downloads;
+measure both before changing the policy. The implementation follows setup-uv's
+[versioned caching contract](https://github.com/astral-sh/setup-uv/blob/v10.3.0/docs/caching.md).
+A cache miss or eviction still permits a normal locked installation, and no check
+is conditional on a cache hit.
+
+Each job writes the cache key and restored status to its GitHub run summary.
+The install step uses shell `time` to report sync duration; setup-uv restoration
+and its post-job save durations remain visible separately in the Actions step view.
+Compare their combined cost, not just installation time.
+
+### Verification and hosted evidence
+
+On the laptop, keep the CUDA profile in `.venv` and use the existing quality commands
+and synthetic unit/CPU tests above. Do not run the CI-only sync commands against
+that environment: the quality sync would remove ML packages, and the CPU sync would
+replace the CUDA profile. The two clean CI environments are created on separate
+GitHub runners. Reuse valid local quality results while their Python files,
+configuration, and environment remain unchanged.
+
+Before describing hosted CI or caching as verified:
+
+1. After owner-authorized publication, inspect both jobs on an actual pull-request
+   run. A local YAML parse cannot validate GitHub expressions or hosted actions.
+2. After a successful run has saved its caches, rerun on the same ref and record
+   both jobs' cache status and keys. Do not assume a cache hit across unrelated refs.
+3. On an owner-approved change to `uv.lock` or `pyproject.toml`, confirm each job's
+   dependency hash/key changes and checks still execute. Keep this item pending if
+   no such change has been exercised; do not add a dependency just for this check.
+4. Fill the evidence table using actual run URLs and observed timings. An unchanged
+   key does not guarantee a hit after cache eviction, and caching is not a guaranteed
+   speed improvement.
+
+| Hosted scenario | Run URL / commit | Quality cache / setup duration | CPU cache / setup duration |
+|---|---|---|---|
+| Cold cache | Pending | Pending | Pending |
+| Warm cache on the same ref | Pending | Pending | Pending |
+| Dependency-file hash change | Pending | Pending | Pending |
 
 ## Verification record
+
+### 2026-10-18: issue #7 local checks
+
+On `ci/issue-7-quality-cpu-checks`, the coding agent checked the workflow with the
+existing environment; no dependencies were installed and the CUDA profile was
+preserved:
+
+- YAML parsing and targeted structural checks passed for triggers, job boundaries,
+  verified release SHAs, cache paths/keys, and unconditional check steps.
+- Every embedded `run` block passed `bash -n` syntax checking without executing
+  its installation or quality commands. No dedicated `actionlint` binary was
+  installed; these checks are not complete GitHub workflow-schema validation.
+- `HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 .venv/bin/python -m pytest tests/unit tests/integration -m 'not cuda' -p no:cacheprovider`:
+  12 passed, 1 CUDA test deselected. CPU tensors ran in the existing CUDA-profile
+  environment, not a newly installed CPU-only environment.
+- Python files, dependency/tool configuration, and the lockfile are unchanged by
+  #7. The owner-run Ruff/MyPy evidence from #6 remains applicable locally; the
+  new workflow will rerun those checks on GitHub.
+
+### 2026-10-18: issue #7 independent review
+
+The owner supplied a Google Antigravity review of the uncommitted issue #7 files on
+`ci/issue-7-quality-cpu-checks`, based on commit `72e3ac4`. It reported no confirmed
+defects in the workflow, development guide, or README and concluded ready to commit.
+The reviewer reported successful YAML parsing and embedded Bash syntax checks,
+plus 12 passing synthetic unit/CPU integration tests with 1 CUDA test deselected.
+Existing owner-run Ruff/MyPy evidence was reused for unchanged Python code and
+configuration.
+
+The coding agent checked the findings against the current files and agreed that
+no workflow fixes were needed. The owner approved this documentation-only update
+to record the completed review; this later note was not independently reviewed.
+Opening or updating the pull request triggers CI; pushing this feature branch
+alone does not.
+
+Hosted jobs, clean runner profile isolation, cache hits/misses, dependency-hash
+invalidation, and timing measurements remain pending. Local checks and reviewer
+agreement do not establish hosted CI success or complete issue #7.
+
+### Issue #5 dependency evidence
 
 Issue #5's owner-run dependency results are recorded in the
 [root README](../README.md#dependency-profiles). The earlier foundation snapshot
@@ -208,5 +327,6 @@ passing result, and the subsequent assertion wrapping changed no types or behavi
 No further implementation changes are proposed from this review. These records
 do not imply that the later documentation updates were independently reviewed.
 
-The full synthetic suite passes, including the console boundary. No real-model/data
-or hosted-CI results are claimed. Owner acceptance and merge remain pending.
+The full synthetic suite passed, including the console boundary. No real-model/data
+or hosted-CI results were claimed. Issue #6 was subsequently merged; #7 owns hosted
+workflow and caching verification.

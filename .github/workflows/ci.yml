@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HF_HUB_OFFLINE: "1"
+  HF_DATASETS_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+  UV_PROJECT_ENVIRONMENT: .venv
+  UV_PYTHON_DOWNLOADS: never
+
+jobs:
+  quality:
+    name: Quality and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        id: python
+        with:
+          python-version-file: .python-version
+          architecture: x64
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        id: uv
+        with:
+          version: "0.13.0"
+          python-version: ${{ steps.python.outputs.python-version }}
+          enable-cache: true
+          cache-local-path: ${{ github.workspace }}/.cache/uv
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+          cache-suffix: quality
+          prune-cache: false
+      - name: Record dependency cache
+        env:
+          CACHE_HIT: ${{ steps.uv.outputs.cache-hit }}
+          CACHE_KEY: ${{ steps.uv.outputs.cache-key }}
+        run: |
+          printf '### Quality dependency cache\n\n- Restored: `%s`\n- Key: `%s`\n' \
+            "$CACHE_HIT" "$CACHE_KEY" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install quality tools without ML runtime
+        run: time uv sync --locked --only-group dev
+      - name: Lint
+        run: uv run --no-sync ruff check src/vlm_finetuning tests
+      - name: Check formatting
+        run: uv run --no-sync ruff format --check src/vlm_finetuning tests
+      - name: Type check
+        run: uv run --no-sync mypy
+      - name: Unit tests
+        run: uv run --no-sync pytest tests/unit
+
+  integration:
+    name: CPU integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        id: python
+        with:
+          python-version-file: .python-version
+          architecture: x64
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        id: uv
+        with:
+          version: "0.13.0"
+          python-version: ${{ steps.python.outputs.python-version }}
+          enable-cache: true
+          cache-local-path: ${{ github.workspace }}/.cache/uv
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+          cache-suffix: cpu
+          prune-cache: false
+      - name: Record dependency cache
+        env:
+          CACHE_HIT: ${{ steps.uv.outputs.cache-hit }}
+          CACHE_KEY: ${{ steps.uv.outputs.cache-key }}
+        run: |
+          printf '### CPU dependency cache\n\n- Restored: `%s`\n- Key: `%s`\n' \
+            "$CACHE_HIT" "$CACHE_KEY" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install CPU runtime and test tools
+        run: time uv sync --locked --extra cpu --group dev
+      - name: Verify CPU runtime profile
+        run: |
+          uv run --no-sync python - <<'PY'
+          import torch
+
+          assert torch.version.cuda is None, torch.version.cuda
+          print(f"CPU PyTorch: {torch.__version__}")
+          PY
+      - name: CPU integration tests
+        run: uv run --no-sync pytest tests/integration -m "not cuda"
