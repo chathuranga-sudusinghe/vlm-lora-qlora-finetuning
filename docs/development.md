@@ -152,11 +152,12 @@ quantization and actual-model feasibility require separate owner-approved checks
 
 [Issue #7](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/7)
 owns the hosted workflow, action-version verification, and dependency-cache behavior.
-The [workflow](../.github/workflows/ci.yml) is implemented on the issue #7 branch;
-hosted execution and cache measurements remain pending. It runs on pull requests,
-pushes to `main`, and manual dispatch once the workflow is available on the default
-branch. Feature-branch pushes rely on the pull-request trigger to avoid duplicate
-push/PR jobs.
+The [workflow](../.github/workflows/ci.yml) was merged through
+[PR #18](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/pull/18).
+Hosted checks and cold/warm cache behavior have been observed; dependency-file
+invalidation remains pending. It runs on pull requests, pushes to `main`, and
+manual dispatch. Feature-branch pushes rely on the pull-request trigger to avoid
+duplicate push/PR jobs.
 
 | Job | Locked environment | Checks |
 |---|---|---|
@@ -215,7 +216,7 @@ replace the CUDA profile. The two clean CI environments are created on separate
 GitHub runners. Reuse valid local quality results while their Python files,
 configuration, and environment remain unchanged.
 
-Before describing hosted CI or caching as verified:
+Use this procedure to collect hosted CI and cache evidence:
 
 1. After owner-authorized publication, inspect both jobs on an actual pull-request
    run. A local YAML parse cannot validate GitHub expressions or hosted actions.
@@ -228,11 +229,38 @@ Before describing hosted CI or caching as verified:
    key does not guarantee a hit after cache eviction, and caching is not a guaranteed
    speed improvement.
 
-| Hosted scenario | Run URL / commit | Quality cache / setup duration | CPU cache / setup duration |
+Hosted results inspected on 2026-10-18 from GitHub job steps and logs:
+
+- The initial [PR #18 run](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39110499138)
+  at `d7b7befe8c392770fc14039a6fd41ed076112446` passed both jobs with cache misses.
+- Both `main` runs below passed Ruff lint/formatting, MyPy (8 files), 7 isolated
+  unit tests, and 5 CPU integration tests with 1 CUDA test deselected. The CPU
+  profile assertion passed with PyTorch `2.11.0+cpu`; all checks still ran on cache hits.
+
+In the table, **setup** is the setup-uv action duration, including uv setup and
+cache lookup/restoration; **sync** is the install command's shell `time` real value;
+**post** is the setup-uv post-job step, including cache saving on misses. Setup/post
+durations come from whole-second GitHub step timestamps; a recorded 0 s can represent
+sub-second work. Checkout, Python setup, and tests are excluded from these timings.
+
+| Hosted scenario | Run URL / commit | Quality cache / setup, sync, post | CPU cache / setup, sync, post |
 |---|---|---|---|
-| Cold cache | Pending | Pending | Pending |
-| Warm cache on the same ref | Pending | Pending | Pending |
+| Cold cache on `main` | [Run 39110554936](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39110554936), `37fc5080ff71324ef517e2da80378bb432963d2e` | Miss; 1 s, 0.648 s, 2 s | Miss; 1 s, 3.387 s, 3 s |
+| Warm cache on `main` | [Run 39111882266](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39111882266), `9e4f66015bc8fd5a48be09beffe34f802b08dae3` | Hit; 2 s, 0.034 s, 0 s | Hit; 5 s, 1.045 s, 0 s |
 | Dependency-file hash change | Pending | Pending | Pending |
+
+Both `main` runs used the same keys, with separate quality/CPU suffixes:
+
+```text
+setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-035d4d4dc58da012e75e90d98909b5d5678bf1d4710f202b5f1baffe479bbd58-quality
+setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-035d4d4dc58da012e75e90d98909b5d5678bf1d4710f202b5f1baffe479bbd58-cpu
+```
+
+Warm syncs were shorter, but cache restoration adds overhead; these observations
+do not establish a consistent overall speedup. Dependency-file invalidation has
+not been exercised, so issue #7 is not complete. Keep that check pending until an
+owner-approved dependency-file change; no dependency change is needed solely for it.
+Hosted CPU checks do not establish CUDA or actual-model feasibility.
 
 ## Verification record
 
@@ -270,9 +298,10 @@ to record the completed review; this later note was not independently reviewed.
 Opening or updating the pull request triggers CI; pushing this feature branch
 alone does not.
 
-Hosted jobs, clean runner profile isolation, cache hits/misses, dependency-hash
-invalidation, and timing measurements remain pending. Local checks and reviewer
-agreement do not establish hosted CI success or complete issue #7.
+At the time of this pre-publication review, hosted jobs, clean runner profile
+isolation, cache hits/misses, dependency-hash invalidation, and timing measurements
+were pending. Later hosted results are recorded above; dependency-file invalidation
+remains unobserved. The earlier review does not cover this evidence follow-up.
 
 ### Issue #5 dependency evidence
 
