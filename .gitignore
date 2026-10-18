@@ -14,3 +14,21 @@ outputs/
 
 # Environment
 .env
+
+# Development tools and package builds
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Local data and generated experiment evidence
+data/*
+!data/README.md
+artifacts/
+runs/
+logs/
+*.log

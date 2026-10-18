@@ -1,0 +1,103 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vlm-lora-qlora-finetuning"
+version = "0.1.0"
+description = "Resource-efficient VLM fine-tuning for structured fashion-product attributes."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+# Keep the base package free of ML runtimes. Select cpu or cuda explicitly.
+dependencies = []
+
+[project.optional-dependencies]
+# Keep shared ML pins identical across profiles; only the runtime/quantization differs.
+cpu = [
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.15.0",
+    "datasets==5.0.1",
+    "accelerate==1.14.0",
+    "peft==0.20.0",
+    "trl==1.10.0",
+    "Pillow==12.0.0",
+]
+cuda = [
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "transformers==5.15.0",
+    "datasets==5.0.1",
+    "accelerate==1.14.0",
+    "peft==0.20.0",
+    "trl==1.10.0",
+    "Pillow==12.0.0",
+    "bitsandbytes==0.50.1",
+]
+
+# The diagnostic entry point is introduced with its implementation in issue #6.
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "ruff==0.16.3", "mypy==2.4.0"]
+notebook = ["ipykernel==7.3.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vlm_finetuning"]
+
+[tool.uv]
+required-version = "==0.13.0"
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Preserve the owner's standalone experiment until its separate migration.
+extend-exclude = ["src/baseline_inference.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# Issue #6 adds tests to the checking scope when those files are introduced.
+files = ["src/vlm_finetuning"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-config --strict-markers"
+markers = [
+    "unit: isolated tests without ML runtime, network, dataset, or GPU",
+    "integration: tests against an installed runtime or real command boundary",
+    "cuda: opt-in tests that require a working NVIDIA CUDA device",
+]
