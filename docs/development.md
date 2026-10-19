@@ -154,8 +154,8 @@ quantization and actual-model feasibility require separate owner-approved checks
 owns the hosted workflow, action-version verification, and dependency-cache behavior.
 The [workflow](../.github/workflows/ci.yml) was merged through
 [PR #18](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/pull/18).
-Hosted checks and cold/warm cache behavior have been observed; dependency-file
-invalidation remains pending. It runs on pull requests, pushes to `main`, and
+Hosted checks, cold/warm cache behavior, and dependency-file invalidation have
+been observed. It runs on pull requests, pushes to `main`, and
 manual dispatch. Feature-branch pushes rely on the pull-request trigger to avoid
 duplicate push/PR jobs.
 
@@ -229,7 +229,7 @@ Use this procedure to collect hosted CI and cache evidence:
    key does not guarantee a hit after cache eviction, and caching is not a guaranteed
    speed improvement.
 
-Hosted results inspected on 2026-10-18 from GitHub job steps and logs:
+Hosted results inspected on 2026-10-18 and 2026-10-19 from GitHub job steps and logs:
 
 - The initial [PR #18 run](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39110499138)
   at `d7b7befe8c392770fc14039a6fd41ed076112446` passed both jobs with cache misses.
@@ -247,7 +247,12 @@ sub-second work. Checkout, Python setup, and tests are excluded from these timin
 |---|---|---|---|
 | Cold cache on `main` | [Run 39110554936](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39110554936), `37fc5080ff71324ef517e2da80378bb432963d2e` | Miss; 1 s, 0.648 s, 2 s | Miss; 1 s, 3.387 s, 3 s |
 | Warm cache on `main` | [Run 39111882266](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39111882266), `9e4f66015bc8fd5a48be09beffe34f802b08dae3` | Hit; 2 s, 0.034 s, 0 s | Hit; 5 s, 1.045 s, 0 s |
-| Dependency-file hash change | Pending | Pending | Pending |
+| Dependency-file hash change (PR #25) | [Run 39217977312](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/actions/runs/39217977312), head `a340a81f55dc1d17f1d67dbf5cc2ab319ecd8b4c` | Miss; ~1.19 s, 0.381 s, ~2.02 s | Miss; ~1.00 s, 3.778 s, ~5.16 s |
+
+For the PR #25 row, setup/post durations are approximate intervals from timestamped
+job logs: setup-uv's opening log group to the next step's opening group, and its
+post-job cleanup message to the following cleanup message. These include the
+intervening step-transition overhead; sync uses the command's shell `time` value.
 
 Both `main` runs used the same keys, with separate quality/CPU suffixes:
 
@@ -256,11 +261,32 @@ setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-035d4d4dc58da012e75e90d
 setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-035d4d4dc58da012e75e90d98909b5d5678bf1d4710f202b5f1baffe479bbd58-cpu
 ```
 
+On 2026-10-19, [PR #25](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/pull/25)
+added only an explanatory comment above the notebook dependency group in
+`pyproject.toml`. Parsed configuration, package versions, and `uv.lock` were
+unchanged. The pull-request run checked out synthetic merge commit
+`ed83149ef1242ff23d6580f607e120fb33e38a7f` for head
+`a340a81f55dc1d17f1d67dbf5cc2ab319ecd8b4c`.
+
+Both jobs kept the same platform, Python version, and cache suffixes, but the
+dependency hash changed from `035d4d4dc58da012e75e90d98909b5d5678bf1d4710f202b5f1baffe479bbd58`
+to `916b24bd46ac67c1c9cd6279163297e9155463ec1eb76aa2fb13375b3b61d14c`:
+
+```text
+setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-916b24bd46ac67c1c9cd6279163297e9155463ec1eb76aa2fb13375b3b61d14c-quality
+setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.15-916b24bd46ac67c1c9cd6279163297e9155463ec1eb76aa2fb13375b3b61d14c-cpu
+```
+
+Both jobs reported cache misses and saved caches under their new keys. Locked
+syncs succeeded; Ruff lint/formatting, MyPy (8 files), 7 unit tests, and 5 CPU
+integration tests passed, with 1 CUDA test deselected. The CPU profile assertion
+passed with PyTorch `2.11.0+cpu`. This verifies invalidation on a `pyproject.toml`
+content change; a separate `uv.lock` change was not exercised. The remaining
+cache-evidence requirement for issue #7 is satisfied; closure remains owner-controlled.
+
 Warm syncs were shorter, but cache restoration adds overhead; these observations
-do not establish a consistent overall speedup. Dependency-file invalidation has
-not been exercised, so issue #7 is not complete. Keep that check pending until an
-owner-approved dependency-file change; no dependency change is needed solely for it.
-Hosted CPU checks do not establish CUDA or actual-model feasibility.
+do not establish a consistent overall speedup. Hosted CPU checks do not establish
+CUDA or actual-model feasibility.
 
 ## Verification record
 
@@ -300,8 +326,8 @@ alone does not.
 
 At the time of this pre-publication review, hosted jobs, clean runner profile
 isolation, cache hits/misses, dependency-hash invalidation, and timing measurements
-were pending. Later hosted results are recorded above; dependency-file invalidation
-remains unobserved. The earlier review does not cover this evidence follow-up.
+were pending. Later hosted results, including dependency-file invalidation, are
+recorded above. The earlier review does not cover these evidence follow-ups.
 
 ### Issue #5 dependency evidence
 

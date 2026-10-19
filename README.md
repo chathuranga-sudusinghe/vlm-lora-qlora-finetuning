@@ -15,8 +15,8 @@ specification, dependency tooling, and device diagnostics/tests are merged throu
 issues #13, #4, #5, and #6. Unmeasured experiment settings remain proposals. Local
 Ruff lint/formatting, MyPy, and all 13 synthetic tests passed for #6. Issue #7's
 CPU-only continuous integration workflow is merged. Hosted quality/unit and CPU
-integration jobs passed, and cold/warm dependency-cache behavior was observed;
-dependency-file cache invalidation remains pending. Dataset preparation,
+integration jobs passed, and cold/warm dependency-cache behavior and
+dependency-file cache invalidation were observed. Dataset preparation,
 controlled evaluation, and adapter training remain planned. Model fit, practical
 training cost, and extraction improvements have not been established.
 
@@ -184,7 +184,7 @@ entry-point change before testing the installed console command. The issue #7
 workflow separates quality/unit checks from CPU integration, pins verified action
 releases, and caches dependencies while still running every check. See the
 [CI guide](docs/development.md#continuous-integration) for boundaries, hosted results,
-cache timings, and the remaining cache-invalidation evidence gap.
+cache timings, and observed dependency-file cache invalidation.
 
 Follow [AGENTS.md](AGENTS.md) for owner-first execution and review requirements.
 
@@ -223,7 +223,7 @@ later migration; it is not the controlled structured baseline. Work is separated
 | #4: detailed specification, merged; run settings proposed | `docs/dataset.md`, `docs/experiments.md`, `docs/references.md`, `docs/decisions/DR-002-product-attribute-experiment.md` |
 | #5: dependency tooling, merged; owner-run validation recorded | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
 | #6: diagnostics and tests, merged; local validation and review recorded | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
-| #7: CPU continuous integration merged; hosted checks and cold/warm caches observed; dependency-file invalidation pending | `.github/workflows/ci.yml`, relevant development/status documentation |
+| #7: CPU continuous integration merged; hosted checks, cold/warm caches, and dependency-file invalidation observed | `.github/workflows/ci.yml`, relevant development/status documentation |
 
 Local drafts are not part of an issue's commit merely because they exist in the
 working directory. Preserve them and stage only files assigned to the active issue.
@@ -231,9 +231,9 @@ working directory. Preserve them and stage only files assigned to the active iss
 ## Next milestone
 
 The next implementation milestone is the dataset audit, task validation, and frozen
-manifests under a separate owner-approved issue and branch. Keep issue #7's remaining
-cache-invalidation check pending until an approved dependency-file change exercises
-it. Then implement shared generation/scoring, verify the actual model, establish
+manifests under a separate owner-approved issue and branch. Issue #7's hosted
+checks and cache evidence are recorded in the [CI guide](docs/development.md#continuous-integration).
+Then implement shared generation/scoring, verify the actual model, establish
 both base conditions, and run owner-approved adapter pilots before the final
 comparison. Keep held-out test data out of tuning.
 
