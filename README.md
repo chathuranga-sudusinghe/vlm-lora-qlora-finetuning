@@ -42,22 +42,26 @@ does not seek a universal winning method.
 
 ## Task and bounded scope
 
-Use a single image and task instructions to generate structured attributes. The
-preferred initial fields are illustrated below; these values are examples, not a
-final canonical vocabulary:
+Use a single image and task instructions to generate exactly four structured
+attributes using the dataset's column names, as agreed in
+[issue #23](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/23).
+These values illustrate source-label spelling and capitalization, not a final
+canonical vocabulary:
 
 ```json
 {
-  "article_type": "shirt",
-  "base_colour": "blue",
-  "subcategory": "topwear"
+  "masterCategory": "Apparel",
+  "subCategory": "Topwear",
+  "articleType": "Shirts",
+  "baseColour": "Blue"
 }
 ```
 
-Plan for an explicit `unknown` value when visual evidence is insufficient. Exact
-allowed values, normalization, exclusions, and abstention evaluation remain proposed
-under issue #4. Valid JSON alone does not establish correct visual extraction or
-readiness for unattended catalog use.
+Plan for an explicit `unknown` value when visual evidence is insufficient. The
+[dataset contract](docs/dataset.md#initial-task) owns exact validation rules and the
+training-derived vocabulary policy. Final vocabularies and eligibility rules must
+be frozen before evaluation. Valid JSON alone does not establish correct visual
+extraction or readiness for unattended catalog use.
 
 The selected dataset is
 [Fashion Product Images Small](https://huggingface.co/datasets/ashraq/fashion-product-images-small).

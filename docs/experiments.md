@@ -1,10 +1,11 @@
 # Experiment plan
 
-**Status (2026-10-18):** detailed protocol proposed under issue #4, aligned with the
-direction merged through #13 / PR #14. The dataset is owner-selected; the canonical
-vocabulary, sample/update budgets, hyperparameters, acceptance thresholds, and final
-recipe still require review. No content audit, prepared split, controlled model
-evaluation, adapter training, or measured VLM fit is claimed by this milestone.
+**Status (2026-10-19):** detailed protocol proposed under issue #4, aligned with the
+direction merged through #13 / PR #14 and the owner-selected four-field scope in #23.
+The dataset is owner-selected; the final canonical vocabulary, sample/update budgets,
+hyperparameters, acceptance thresholds, and final recipe still require review. This
+documentation change claims no new audit results, prepared split, controlled model
+evaluation, adapter training, or measured VLM fit.
 
 ## Research questions
 
@@ -44,7 +45,9 @@ establish application compatibility or select a CUDA upgrade.
 Use one dataset, `ashraq/fashion-product-images-small`, and initially one candidate,
 `HuggingFaceTB/SmolVLM-500M-Instruct`. Pin its exact revision before evidence-producing
 runs. The task contract is owned by [dataset.md](dataset.md#initial-task):
-`article_type`, `base_colour`, and `subcategory`, with explicit `unknown` semantics.
+`masterCategory`, `subCategory`, `articleType`, and `baseColour`, with source-label
+spelling/capitalization and explicit `unknown` semantics. All four conditions use
+this same four-field contract and frozen training-derived vocabularies.
 
 - Target 2,000 training, 250 validation, and 250 held-out test images, subject to
   audit, group isolation, eligibility, and available support.
@@ -143,7 +146,7 @@ provide rationale, not evidence for this laptop/task; see [references](reference
 
 ## Evaluation
 
-**Proposed primary outcome:** joint exact match on all three required fields over
+**Proposed primary outcome:** joint exact match on all four required fields over
 every eligible test image. Approve the protocol and practical success criteria before
 observing final test results; no arbitrary improvement threshold is asserted here.
 
@@ -160,12 +163,26 @@ condition. Keep raw generations and validation reasons.
 |---|---|
 | Parse success | Answers accepted by strict single-object JSON parsing / N |
 | Schema validity | Parsed answers satisfying all keys, types, allowed values, and abstention rules / N |
-| Required-key coverage | Required keys present in parsed objects / (3 × N); presence alone is not correctness |
+| Required-key coverage | Required keys present in parsed objects / (4 × N); presence alone is not correctness |
 | Invalid-label rate | Images with at least one parsed field string that is neither a known label for that field nor `unknown` / N; separately report missing/type/parse failures |
-| Per-field accuracy | Correct field predictions from schema-valid records / N |
-| Per-field macro precision/recall/F1 | Equal-weight class metrics over each field's frozen training-derived known-label set |
-| Joint exact match | Schema-valid records with all three fields correct / N |
-| Hierarchy consistency | Schema-valid records whose known article-type/subcategory pair is in the frozen training-derived relation / N; report unknown/invalid cases separately |
+| Per-field accuracy | Correct predictions from schema-valid records / N, reported separately for `masterCategory`, `subCategory`, `articleType`, and `baseColour` |
+| Per-field macro precision/recall/F1 | Equal-weight class metrics over each of the four fields' frozen training-derived known-label sets |
+| Joint exact match | Schema-valid records with all four fields correct / N |
+| Hierarchy consistency | Schema-valid records with all three category fields known and their (`masterCategory`, `subCategory`, `articleType`) triple in the frozen training-derived relation / N; report hierarchy abstentions and invalid records separately |
+
+Required-key coverage counts each required key at most once per strictly parsed
+object, regardless of its value or extra keys. A parse failure contributes zero;
+missing keys remain in the fixed `4 × N` denominator. Schema validity is separate
+and still rejects extra/missing/duplicate keys, wrong types, and invalid labels.
+
+The [dataset hierarchy policy](dataset.md#initial-task) owns the training-derived
+category relation. Hierarchy consistency is a separate diagnostic: individually
+allowed labels can form an inconsistent triple without making the record
+schema-invalid. An `unknown` in any category field leaves the hierarchy unassessed;
+an `unknown` in `baseColour` alone does not. Keep all images in N and separately
+report known consistent triples, known inconsistent triples, hierarchy abstentions,
+and invalid records. Do not repair or fill category fields from predicted parents
+or children before scoring.
 
 A schema-invalid record fails every field and joint exact match, even if one field
 is recoverable. Never drop it from N. For known catalog targets, `unknown` is not a
@@ -225,8 +242,8 @@ does not measure dataset uncertainty or establish statistical significance.
 ### Small error review and interpretation
 
 Use the fixed review subset and a small declared development-error sample. Record
-colour confusion, article/subcategory confusion, hierarchy violations, ambiguous or
-low-resolution images, catalog disagreement, invalid output, and unsupported claims.
+colour confusion, confusion at each catalog-category level, hierarchy violations,
+ambiguous or low-resolution images, catalog disagreement, invalid output, and unsupported claims.
 Allow multiple reasons and report how cases were selected. Do not turn this into
 a large annotation project or a post-test relabelling/tuning exercise.
 
@@ -261,7 +278,7 @@ reports may enter Git after owner review.
 |---|---|
 | Dataset | Selected; historical local inventory in `dataset.md` |
 | Provenance/audit | Exact download revision, checksums, row/image validation pending |
-| Contract/vocabulary | Proposed here and in `dataset.md`; canonical values and review rubric unresolved |
+| Contract/vocabulary | Four-field scope selected under #23; contract documented in `dataset.md`; final canonical values and review rubric unresolved |
 | Splits/budget | Candidate sizes only; no validated manifest or selection implemented |
 | Model/runtime | SmolVLM candidate; exact revision, pinned-stack support, fit and practical limits unverified; runtime choice belongs to #5 |
 | Training | Candidate adapters only; essential settings and final seeds/budget pending |
