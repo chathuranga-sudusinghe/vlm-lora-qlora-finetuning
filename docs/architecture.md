@@ -12,10 +12,12 @@ hierarchy. The detailed question-to-evidence mapping and experimental protocol
 belong in `docs/experiments.md` under issue #4; its current draft requires alignment.
 This document owns component boundaries and the planned flow, not a second protocol.
 
-The preferred initial output fields are `article_type`, `base_colour`, and
-`subcategory`. The planned contract allows explicit `unknown` values for insufficient
-visual evidence. Canonical labels, exclusions, and abstention rules remain proposed
-in the issue #4 task specification. Inputs contain only the image and instructions,
+The owner-selected output fields are `masterCategory`, `subCategory`, `articleType`,
+and `baseColour`, using the exact dataset column names under issue #23. The planned
+contract allows explicit `unknown` values for insufficient visual evidence. The
+[dataset specification](dataset.md#initial-task) owns the contract and vocabulary
+policy; final labels and eligibility rules remain to be derived from training data
+and frozen before evaluation. Inputs contain only the image and instructions,
 never product names or target metadata.
 
 The initial target is one Linux/Windows Subsystem for Linux (WSL) laptop with an
@@ -125,8 +127,11 @@ Dataset provenance, the audit specification, raw-to-canonical mappings, and spli
 integrity belong in planned `docs/dataset.md` under
 [issue #4](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/4).
 Record corrupt/missing records, conflicting labels, grouping decisions, retained
-class support, and exclusions. Audit whether subcategory is largely determined by
-article type; do not assume the three fields are independent prediction problems.
+class support, and exclusions. Audit the `masterCategory` / `subCategory` /
+`articleType` hierarchy using relationships derived from candidate training data.
+These are related catalog levels, not independent visual capabilities. Predict all
+four fields explicitly; do not silently derive a predicted category from another
+predicted field during the main evaluation.
 
 Split related images before generating multiple instructions. Choose class subsets
 and normalization from candidate training data, apply fixed rules to the other

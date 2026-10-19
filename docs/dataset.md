@@ -1,9 +1,10 @@
 # Dataset and integrity policy
 
-**Status (2026-10-18):** the dataset is owner-selected. The task contract, audit,
-canonical vocabulary, exclusions, and preparation rules below are proposed for
-review under issue #4. No dataset-content audit, prepared split, or manifest is
-claimed. The [experiment plan](experiments.md) owns run budgets and evaluation.
+**Status (2026-10-19):** the dataset and four-field output scope are owner-selected;
+issue #23 aligns the contract with that scope. The audit, final canonical vocabulary,
+exclusions, and preparation rules remain proposed under issue #4. This documentation
+change introduces no new dataset measurements, prepared split, or manifest.
+The [experiment plan](experiments.md) owns run budgets and evaluation.
 
 ## Selected source
 
@@ -51,34 +52,42 @@ revision. Do not invent a revision or claim checksum verification has happened.
 
 ## Initial task
 
-Extract three attributes from a single product image and task instructions. The
-preferred fields follow the direction in the [project overview](../README.md):
+Extract four attributes from a single product image and task instructions, using
+the exact source column names as JSON keys. The owner-selected scope is recorded in
+[issue #23](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/23)
+and summarized in the [project overview](../README.md):
 
-| Proposed output | Source field | Role |
+| Output key | Source field | Role |
 |---|---|---|
-| `article_type` | `articleType` | Fine product type within the selected task scope |
-| `base_colour` | `baseColour` | Main catalog colour, subject to visual ambiguity |
-| `subcategory` | `subCategory` | Intermediate catalog category |
+| `masterCategory` | `masterCategory` | Broad catalog category |
+| `subCategory` | `subCategory` | Intermediate catalog category |
+| `articleType` | `articleType` | Fine product type within the selected task scope |
+| `baseColour` | `baseColour` | Main catalog colour, subject to visual ambiguity |
 
-This replaces the earlier `category`/`masterCategory` target; it is more than a key
-rename. Inputs must not contain product names, labels, IDs that encode answers, or
-other target metadata. Keep source identifiers only for provenance and grouping.
+Only these four fields are output targets. `gender`, `season`, `year`, `usage`, and
+`productDisplayName` remain outside the output contract. Inputs must not contain
+product names, labels, IDs that encode answers, or other target metadata. Keep source
+identifiers only for provenance and grouping.
 
-Audit whether article type determines subcategory in the retained training data.
-Keep the requested fields but report their dependence and hierarchy consistency;
-do not describe them as three independent capabilities or silently derive one
-predicted field from another during the main evaluation.
+The hierarchy runs from `masterCategory` to `subCategory` to `articleType`, for
+example `Apparel` / `Topwear` / `Shirts`. Derive the allowed category triples from
+the candidate training partition, restricted by its frozen eligibility rules; audit
+whether article types determine their parent categories rather than assuming so.
+Keep all four requested predictions but report category dependence and hierarchy
+consistency. Do not describe these related category levels as independent visual
+capabilities or silently derive one predicted field from another in the main evaluation.
 
 ### Proposed structured-output contract
 
-Require exactly one JSON object containing exactly these three keys, each with a
+Require exactly one JSON object containing exactly these four keys, each with a
 string value. This example illustrates the shape, not a finalized vocabulary:
 
 ```json
 {
-  "article_type": "shirt",
-  "base_colour": "blue",
-  "subcategory": "topwear"
+  "masterCategory": "Apparel",
+  "subCategory": "Topwear",
+  "articleType": "Shirts",
+  "baseColour": "Blue"
 }
 ```
 
@@ -93,14 +102,18 @@ defines how invalid records affect metrics.
 ### Canonical vocabulary and abstention
 
 Retain raw labels alongside canonical targets in local preparation artifacts.
-Propose trimming surrounding whitespace and case-folding labels, with any additional
-alias mapping explicitly recorded and reviewed. Do not assume spelling or punctuation
-changes preserve meaning. Derive allowed labels, aliases, class selection, and the
-article-type/subcategory relationship from the candidate training partition, then
-freeze their versions/hashes before evaluation. Apply the same rules to every split.
-Reserve `unknown` separately from known classes and check for label collisions.
-Dataset-label normalization does not repair generated labels; predictions must use
-the canonical strings required by the contract.
+Canonical known-label strings retain source spelling and capitalization, as in
+`Apparel`, `Topwear`, `Shirts`, and `Blue`. Propose trimming surrounding whitespace
+from source labels only; do not case-fold or lowercase the target vocabulary.
+Any additional alias mapping requires explicit recording and review. Do not assume
+spelling, capitalization, or punctuation changes preserve meaning. Derive allowed
+labels for all four fields, aliases, class selection, eligibility rules, and category
+triples from the candidate training partition only, then freeze their versions/hashes
+before evaluation. Apply the same frozen rules to every split.
+Reserve the exact lowercase string `unknown` separately from known classes and check
+for label collisions. Dataset-label normalization does not repair generated labels;
+predictions must use the exact canonical strings required by the contract, including
+capitalization and without silently trimming generated string values.
 
 `unknown` means insufficient visual evidence for that field. It is a valid abstention,
 not a missing key, malformed answer, missing source label, or out-of-vocabulary class.

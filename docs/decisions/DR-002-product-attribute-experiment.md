@@ -1,9 +1,9 @@
 # DR-002: A bounded product-attribute experiment
 
 - **Date:** 2026-10-17
-- **Updated:** 2026-10-18
+- **Updated:** 2026-10-19
 - **Status:** dataset accepted; project direction merged through #13 / PR #14;
-  detailed task contract and experiment settings proposed under #4
+  four-field scope selected under #23; detailed experiment settings proposed under #4
 
 ## Context
 
@@ -26,10 +26,13 @@ does not establish schema correctness, image readability, or a verified source r
 
 Use `ashraq/fashion-product-images-small` as the selected source. Keep the existing
 small model candidate initially; model fit and pinned-stack compatibility remain
-unverified. Propose `article_type`, `base_colour`, and `subcategory` from the catalog
-fields `articleType`, `baseColour`, and `subCategory`, respectively. This replaces
-the earlier broad-category target. Require image-only inputs, a canonical vocabulary,
-and a strict three-field JSON contract with explicit `unknown` semantics.
+unverified. Under issue #23, the owner selected `masterCategory`, `subCategory`,
+`articleType`, and `baseColour` as the four output keys, matching the catalog column
+names exactly. Including the broad category alongside the intermediate and fine
+categories supports the intended catalog-attribute use case. Require image-only
+inputs, a training-derived canonical vocabulary retaining source-label spelling
+and capitalization, and a strict four-field JSON contract with explicit `unknown`
+semantics. Other metadata remains outside the output contract.
 
 Compare four conditions: floating-point unadapted base, four-bit unadapted base,
 Low-Rank Adaptation (LoRA), and quantized LoRA (QLoRA). Match each adapter to its
@@ -51,9 +54,9 @@ seed confirmation, and small review protocol. [references.md](../references.md)
 records sources and verification limits. This record explains the rationale rather
 than duplicating those specifications.
 
-Canonical labels, class subset, split/sample budgets, hyperparameters, and practical
-acceptance criteria remain proposed until reviewed. Documentation acceptance is not
-evidence of dataset validation or permission to execute preparation/training.
+Final canonical labels, class subset, split/sample budgets, hyperparameters, and
+practical acceptance criteria remain proposed until reviewed. Documentation acceptance
+is not evidence of dataset validation or permission to execute preparation/training.
 
 ## Alternatives considered
 
@@ -62,6 +65,9 @@ evidence of dataset validation or permission to execute preparation/training.
 - Chart question answering: measurable but adds chart reading and numerical reasoning.
 - A conventional image classifier: likely simpler for a fixed schema; the VLM project
   is justified as an investigation of structured generation and efficient adaptation.
+- A three-field contract without the broad category: narrower, but omits the
+  owner-requested `masterCategory`. Retain the four-field scope and report category
+  dependence rather than treating the hierarchy as independent visual capabilities.
 - Larger product datasets or models: defer until the initial evaluation shows a need.
 - LoRA versus QLoRA as the main goal: too method-centric; retain it as a supporting
   comparison serving the practical extraction question.
@@ -71,9 +77,12 @@ evidence of dataset validation or permission to execute preparation/training.
 ## Consequences
 
 Small inspected images warn against fine-detail claims without a full dimension audit.
-Catalog labels may be noisy or visually unsupported, and subcategory may depend on
-article type. Missing metadata is not abstention supervision; inspect any such claims
-with a small predefined visibility review rather than inventing unknown labels.
+Catalog labels may be noisy or visually unsupported. `masterCategory`, `subCategory`,
+and `articleType` describe related catalog levels; derive their consistency relation
+from candidate training data and report it separately from four-field exact match.
+Do not silently derive one predicted category from another. Missing metadata is not
+abstention supervision; inspect any such claims with a small predefined visibility
+review rather than inventing unknown labels.
 
 Good formatting alone does not establish visual accuracy or unattended catalog
 readiness. Preserve invalid predictions in score denominators and evaluate semantic
