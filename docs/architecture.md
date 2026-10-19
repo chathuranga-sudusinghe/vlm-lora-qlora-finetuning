@@ -9,7 +9,7 @@ their comparison supports the main task question.
 
 The [project overview](../README.md#research-questions) summarizes the question
 hierarchy. The detailed question-to-evidence mapping and experimental protocol
-belong in `docs/experiments.md` under issue #4; its current draft requires alignment.
+belong in `docs/experiments.md`; final experimental settings remain proposed.
 This document owns component boundaries and the planned flow, not a second protocol.
 
 The owner-selected output fields are `masterCategory`, `subCategory`, `articleType`,
@@ -78,11 +78,9 @@ driver, local toolkit, environment, or lockfile and runs no GPU diagnostics.
 
 ## Current state and planned foundation
 
-Working rules (`AGENTS.md`), the MIT code license, and the original architecture
-introduced by issue #3 are merged. Issue #13 aligns the overview and architecture;
-issue #4 owns the unmerged dataset/experiment specification, which still needs the
-refined questions and task contract. The components below have local drafts but
-remain assigned to separate, unmerged implementation issues:
+Working rules (`AGENTS.md`), the MIT code license, architecture, and dataset/experiment
+documents are tracked. Final experimental settings and actual-model feasibility
+remain unvalidated. The current repository includes these foundation components:
 
 - Issue #6, `src/vlm_finetuning/environment.py`: explicit CPU/CUDA selection, a tiny synthetic
   forward/backward check, and an immutable runtime report. It imports PyTorch only
@@ -95,6 +93,19 @@ remain assigned to separate, unmerged implementation issues:
   is opt-in and requires an actual accessible device.
 - Issue #5, `pyproject.toml` and `uv.lock`: package metadata, dependency profiles, and quality tools.
 - Issue #7, `.github/workflows/ci.yml`: quality checks and CPU integration tests.
+  This issue is completed; hosted evidence is recorded in `docs/development.md`.
+
+Source inspection (#22) is completed in `notebooks/01_dataset_overview.ipynb`, and
+the four-field output scope (#23) is reflected in the dataset/experiment documents.
+Issue #28 adds `notebooks/02_create_canonical_dataset.ipynb`: source-preserving merge,
+round-trip validation, local provenance manifest, and inspection of the saved artifact.
+Reruns reuse a complete, checksum-matching artifact pair without overwriting; the
+saved schema/count/ID checks still run. Incomplete or invalid pairs stop execution.
+Bounded synthetic checks cover that workflow. The owner's saved execution outputs
+report successful merge validation; the saved row/image previews have been inspected.
+The [dataset evidence record](dataset.md#saved-execution-evidence--2026-10-19) owns
+the observed counts, provenance, and limitations. No new real-data run was performed
+to review those outputs; owner acceptance remains pending.
 
 The owner's existing `src/baseline_inference.py` remains a standalone experiment.
 Its migration and quality-check scope will be reviewed separately. It is not yet
@@ -103,10 +114,15 @@ model inference behavior or establish VLM/quantization/training feasibility.
 
 ## Intended pipeline
 
-The following pipeline is planned, not implemented or validated:
+The merge/inspection step is implemented with synthetic checks and owner-run saved
+execution evidence. The subsequent audit, splitting, model, and evaluation steps
+remain planned:
 
 ```text
-Verified dataset revision or explicitly identified local snapshot
+Two retained raw shards, with verified revision or explicitly identified local snapshot
+  -> concatenate in fixed order, preserving every raw column, value, image byte, and row
+  -> validate saved canonical merged Parquet and provenance manifest in data/interim/
+  -> inspect the saved merged artifact before separately planning split preparation
   -> audit schema, images, labels, dimensions, and exclusion reasons
   -> identify duplicate/product groups
   -> assign candidate train / validation / test groups
@@ -123,9 +139,12 @@ Verified dataset revision or explicitly identified local snapshot
 
 ### Data and task boundary
 
-Dataset provenance, the audit specification, raw-to-canonical mappings, and split
-integrity belong in planned `docs/dataset.md` under
-[issue #4](https://github.com/chathuranga-sudusinghe/vlm-lora-qlora-finetuning/issues/4).
+Dataset provenance, the canonical merged artifact, audit specification,
+raw-to-canonical label mappings, and split integrity belong in
+[docs/dataset.md](dataset.md#canonical-merged-artifact). Subsequent processing uses
+the validated merged Parquet file; the raw shards are retained for provenance and
+rebuilding. The merge retains all 11 columns and performs no label canonicalization,
+selection, or split assignment. The four prediction fields do not restrict its schema.
 Record corrupt/missing records, conflicting labels, grouping decisions, retained
 class support, and exclusions. Audit the `masterCategory` / `subCategory` /
 `articleType` hierarchy using relationships derived from candidate training data.
@@ -197,9 +216,9 @@ inference latency under a shared protocol if practical. Agree practical runtime
 limits before final runs, and report measured fit/failures on this laptop rather
 than generalizing to every consumer GPU.
 
-Planned `docs/experiments.md` owns exact metric definitions, primary-outcome selection,
+`docs/experiments.md` owns exact metric definitions, primary-outcome selection,
 checkpoint rules, sample/update budgets, seed confirmation, and the small error review.
-Its existing draft and DR-002 require alignment before the protocol is finalized.
+Final experimental settings still require owner review before the protocol is frozen.
 This architecture does not authorize preparation, model execution, or training;
 all execution follows `AGENTS.md`.
 
@@ -208,8 +227,10 @@ all execution follows `AGENTS.md`.
 Source, small configuration, tests, documentation, and the dependency lockfile belong
 in Git. Raw/derived data must stay in ignored `data/` paths; model downloads use a local
 cache. Checkpoints, adapters, predictions, and generated run evidence belong in ignored
-`outputs/`, `checkpoints/`, or `artifacts/` directories. Issue #5 will commit the
-corresponding ignore rules and local-data instructions.
+`outputs/`, `checkpoints/`, or `artifacts/` directories. The committed ignore rules
+exclude these generated artifacts. The canonical merged Parquet and merge manifest
+use ignored `data/interim/`; this manifest records preservation/provenance, not split
+membership or a completed image-duplicate audit.
 
 Each evidence-producing run must save its resolved configuration, data/model revisions
 or snapshot identifiers, exact split membership, vocabulary/manifest hashes, seeds,
