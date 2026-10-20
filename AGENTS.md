@@ -237,10 +237,15 @@ responsible for accepting code, design decisions, experiment results, and Git op
   generated predictions stay out of Git. Use tiny synthetic fixtures in tests.
 - Preserve dataset provenance and third-party terms. The project MIT license does
   not grant rights to third-party images or model weights.
-- Split by product/duplicate group before creating multiple prompts for an image.
-  Fit preprocessing and label mappings from training data only; document exclusions.
-- Use validation for model/configuration selection. Do not use held-out test labels
-  to tune prompts, thresholds, preprocessing, or hyperparameters.
+- Follow the [Test-first policy](docs/dataset.md#preparation-and-splitting-rules):
+  seal immutable Test membership before Development-only auditing and task-policy
+  design. Do not inspect Test content or frequencies during development.
+- Derive categorical task policies from Development; fit learned preprocessing
+  statistics on Train only. Keep meaningful Development product/duplicate groups
+  disjoint across Train/Validation before creating multiple prompts for an image.
+- Use Validation for model/configuration selection. Freeze the complete system
+  before final Test access; never use Test outcomes for further development.
+  Preserve raw generations separately from `unknown`/rejection-policy outputs.
 - Keep target metadata out of model inputs. Do not infer non-visible attributes from
   product names and describe them as image-grounded truth.
 - Record seeds, exact sample IDs, dataset/model revisions, configuration, package

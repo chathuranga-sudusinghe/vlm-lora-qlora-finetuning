@@ -16,9 +16,11 @@ issues #13, #4, #5, and #6. Unmeasured experiment settings remain proposals. Loc
 Ruff lint/formatting, MyPy, and all 13 synthetic tests passed for #6. Issue #7's
 CPU-only continuous integration workflow is merged. Hosted quality/unit and CPU
 integration jobs passed, and cold/warm dependency-cache behavior and
-dependency-file cache invalidation were observed. Dataset preparation,
-controlled evaluation, and adapter training remain planned. Model fit, practical
-training cost, and extraction improvements have not been established.
+dependency-file cache invalidation were observed. Source inspection (#22), the
+four-field scope (#23), and canonical merge (#28 / PR #29) are completed. Issue #30
+documents Test-first preparation and sealed evaluation; sealing, Development-only
+preparation, controlled evaluation, and adapter training remain unimplemented.
+Model fit, practical training cost, and extraction improvements have not been established.
 
 ## Research questions
 
@@ -57,11 +59,14 @@ canonical vocabulary:
 }
 ```
 
-Plan for an explicit `unknown` value when visual evidence is insufficient. The
+Plan an explicit source-code decision policy for field-level `unknown` or rejection
+when evidence is insufficient or input is detected as outside supported classes. The
 [dataset contract](docs/dataset.md#initial-task) owns exact validation rules and the
-training-derived vocabulary policy. Final vocabularies and eligibility rules must
-be frozen before evaluation. Valid JSON alone does not establish correct visual
-extraction or readiness for unattended catalog use.
+Development-derived vocabulary policy. Known-label validation alone cannot detect
+unsupported products; preserve raw generations separately from final policy outputs.
+Final vocabularies and the complete decision policy must be frozen before Test
+access. Valid JSON alone does not establish correct visual extraction or readiness
+for unattended catalog use.
 
 The selected dataset is
 [Fashion Product Images Small](https://huggingface.co/datasets/ashraq/fashion-product-images-small).
@@ -215,6 +220,7 @@ docs/
     README.md                Decision index and maintenance rules
     DR-001-...md             Foundation rationale and decision status
     DR-002-...md             Dataset and proposed experiment rationale
+    DR-003-...md             Test-first preparation and sealed evaluation rationale
 ```
 
 This map includes the merged foundation, diagnostics, and issue #7 workflow.
@@ -234,12 +240,19 @@ working directory. Preserve them and stage only files assigned to the active iss
 
 ## Next milestone
 
-The next implementation milestone is the dataset audit, task validation, and frozen
-manifests under a separate owner-approved issue and branch. Issue #7's hosted
-checks and cache evidence are recorded in the [CI guide](docs/development.md#continuous-integration).
-Then implement shared generation/scoring, verify the actual model, establish
-both base conditions, and run owner-approved adapter pilots before the final
-comparison. Keep held-out test data out of tuning.
+The next implementation milestone follows the [Test-first policy](docs/dataset.md#preparation-and-splitting-rules):
+seal approximately 10% random Test membership from the immutable canonical source,
+audit/design policies on Development only, then create grouped, mainly
+`articleType`-stratified Train/Validation membership, targeting approximately 80/10/10
+overall. Exact seeds, algorithms, rounding, and enforcement require separate
+owner-approved implementation scope. No physical Test Parquet is needed by default.
+
+Use Train for fitting and Validation for selection throughout the project. Then
+freeze the complete system and recover the exact sealed Test records for authorized
+final evaluation. Shared generation/scoring, actual-model checks, bases, and adapter
+pilots remain later work. Test results must not guide further development. See
+[DR-003](docs/decisions/DR-003-sealed-test-development-policy.md) for the rationale
+and limits of this same-catalog holdout.
 
 ## License
 

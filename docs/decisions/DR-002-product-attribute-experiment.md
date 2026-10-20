@@ -5,6 +5,16 @@
 - **Status:** dataset accepted; project direction merged through #13 / PR #14;
   four-field scope selected under #23; detailed experiment settings proposed under #4
 
+**Partial supersession (2026-10-20):**
+[DR-003](DR-003-sealed-test-development-policy.md), under issue #30, supersedes
+this record's original audit/split ordering, training-only categorical vocabulary
+and eligibility proposals, and abstention-policy assumptions. Those passages below
+are retained as historical rationale, not the current preparation specification.
+The selected dataset, four output fields, image-only inputs, research questions,
+and controlled four-condition comparison remain unchanged. Current preparation
+rules belong in [dataset.md](../dataset.md#preparation-and-splitting-rules); current
+raw/final scoring and rejection rules belong in [experiments.md](../experiments.md#evaluation).
+
 ## Context
 
 The local baseline already uses SmolVLM-500M-Instruct to describe product images.
