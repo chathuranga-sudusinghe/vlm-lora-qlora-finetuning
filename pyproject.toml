@@ -76,8 +76,6 @@ explicit = true
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-# Preserve the owner's standalone experiment until its separate migration.
-extend-exclude = ["src/baseline_inference.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -85,12 +83,17 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src/vlm_finetuning", "tests"]
+files = ["src", "tests"]
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
 module = ["torch", "torch.*"]
 follow_imports = "skip"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# The quality-only CI profile intentionally omits optional ML/image libraries.
+module = ["PIL", "PIL.*", "transformers", "transformers.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

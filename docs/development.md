@@ -59,11 +59,11 @@ explicit owner permission. Outside-repository paths also require prior approval.
 After syncing the chosen runtime profile, the owner runs these quality gates:
 
 ```bash
-.venv/bin/ruff check src/vlm_finetuning tests
+.venv/bin/ruff check src tests
 ```
 
 ```bash
-.venv/bin/ruff format --check src/vlm_finetuning tests
+.venv/bin/ruff format --check src tests
 ```
 
 ```bash
@@ -82,14 +82,20 @@ Run the CPU integration tests, including the installed console-command boundary:
 HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 .venv/bin/python -m pytest tests/integration -m "not cuda"
 ```
 
-Ruff and MyPy check the new package and tests. The existing standalone
-`src/baseline_inference.py` is deliberately outside their scope until its migration.
-MyPy checks project code and tests strictly while skipping external PyTorch internals;
-passing MyPy does not establish the validity of tensor shapes or CUDA kernels.
+The local Ruff commands cover all source files and tests, including the prototype
+wrapper. Configured MyPy also covers all of `src/` and `tests/`. Narrow missing-import
+exceptions allow optional Torch, Pillow, and Transformers packages to be absent in
+the quality-only environment; project code remains strictly checked. Dynamic
+Transformers factory return types are adapted at the prototype's external boundary.
+Passing MyPy does not establish tensor-shape correctness or actual-model compatibility.
+
+Existing CI Ruff steps still target the package and tests; the wrapper is covered
+by the local Ruff commands, configured CI MyPy, and an entry-point unit test. This
+migration changes no workflow, runtime dependency, lockfile, or installed entry point.
 
 | Check | Verifies | Does not verify |
 |---|---|---|
-| Unit tests | CLI selection, JSON reporting, error statuses, no silent CUDA fallback, safe entry-point import | Real devices, model inference, dataset quality |
+| Unit tests | Diagnostic/prototype CLI dispatch, error statuses, no silent CUDA fallback, safe imports, and mocked prototype generation/decoding | Real devices, model inference, image decoding, dataset quality |
 | CPU integration tests | Synthetic PyTorch forward/backward, non-finite loss/gradient rejection, module and installed console boundaries | GPU behavior, quantization, model quality |
 | CUDA tests | Actual GPU forward/backward, runtime and hardware report | VLM memory fit, bitsandbytes training, speed or quality |
 | Ruff / MyPy | Configured style, static issues, and project type contracts | Numerical correctness or experimental validity |
@@ -101,6 +107,41 @@ boundaries and do not need PyTorch. CPU integration uses the installed framework
 synthetic tensors, not a pretrained model or real dataset. No current test downloads
 data/weights or trains a model. Future real-model/data tests require owner approval
 and must not silently join the default suite.
+
+## Inference prototype
+
+Issue #33 preserves the earlier single-image free-form experiment in
+`src/vlm_finetuning/prototype_inference.py`, with a thin compatibility wrapper at
+`src/baseline_inference.py`. Importing either loads no optional ML/image libraries,
+opens no image, initializes no GPU, and performs no inference. Help is safe to run
+from the repository root without a runtime profile:
+
+```bash
+.venv/bin/python src/baseline_inference.py --help
+```
+
+```bash
+.venv/bin/python -m vlm_finetuning.prototype_inference --help
+```
+
+An actual invocation requires both `--image PATH` and `--device cpu` or
+`--device cuda`. Input paths are relative to the working directory; run from the
+repository root so processor/model caches use ignored `.cache/huggingface/`.
+Missing/non-file paths and undecodable images fail before pretrained loading.
+CPU uses FP32 (32-bit floating-point); CUDA requires availability and BF16 support,
+with no CPU or precision fallback. The model is put in evaluation mode and generates
+at most 128 new tokens with sampling disabled; only answer tokens are decoded.
+CUDA peak allocated memory is a process-level diagnostic, not a controlled benchmark.
+
+The candidate remains `HuggingFaceTB/SmolVLM-500M-Instruct`. This prototype does not
+pin a Hub revision or save experiment manifests. It retains the earlier free-form
+prompt rather than implementing the four-field validator, rejection policy, or
+controlled comparison. It has no Test seal/access guard and must not be used on
+sealed Test records during development. No actual-model compatibility, fit, or
+prediction quality is established by mocked tests or reading pinned interfaces.
+Real image/model execution, including potential weight downloads, requires separate
+exact commands, impact explanation, and explicit owner authorization under
+[AGENTS.md](../AGENTS.md).
 
 ## Diagnostic command
 
