@@ -14,10 +14,10 @@ This document owns component boundaries and the planned flow, not a second proto
 
 The owner-selected output fields are `masterCategory`, `subCategory`, `articleType`,
 and `baseColour`, using the exact dataset column names under issue #23. The planned
-contract allows explicit `unknown` values for insufficient visual evidence. The
-[dataset specification](dataset.md#initial-task) owns the contract and vocabulary
-policy; final labels and eligibility rules remain to be derived from training data
-and frozen before evaluation. Inputs contain only the image and instructions,
+contract allows explicit `unknown` values under a declared inference/decision policy.
+The [dataset specification](dataset.md#initial-task) owns the contract and vocabulary
+policy; final labels and eligibility rules remain to be derived from Development
+and frozen before Test access. Inputs contain only the image and instructions,
 never product names or target metadata.
 
 The initial target is one Linux/Windows Subsystem for Linux (WSL) laptop with an
@@ -105,7 +105,9 @@ Bounded synthetic checks cover that workflow. The owner's saved execution output
 report successful merge validation; the saved row/image previews have been inspected.
 The [dataset evidence record](dataset.md#saved-execution-evidence--2026-10-19) owns
 the observed counts, provenance, and limitations. No new real-data run was performed
-to review those outputs; owner acceptance remains pending.
+to review those outputs. Issue #28 / PR #29 is merged. Issue #30 documents the
+Test-first policy, but no Test seal, Development selector, preparation code, or
+notebook execution guard is implemented by that documentation change.
 
 The owner's existing `src/baseline_inference.py` remains a standalone experiment.
 Its migration and quality-check scope will be reviewed separately. It is not yet
@@ -122,17 +124,20 @@ remain planned:
 Two retained raw shards, with verified revision or explicitly identified local snapshot
   -> concatenate in fixed order, preserving every raw column, value, image byte, and row
   -> validate saved canonical merged Parquet and provenance manifest in data/interim/
-  -> inspect the saved merged artifact before separately planning split preparation
-  -> audit schema, images, labels, dimensions, and exclusion reasons
-  -> identify duplicate/product groups
-  -> assign candidate train / validation / test groups
-  -> derive vocabulary and eligibility rules from candidate training data
-  -> freeze mappings, exclusions, split manifest, and instruction examples
+  -> historical pre-seal inspection of the saved merged artifact (#28)
+  -> select fixed-seed random Test membership (~10%); freeze membership metadata
+  -> logically seal Test; expose only the Development complement (~90%)
+  -> audit Development images/labels/groups and version task policies
+  -> split Development into Train/Validation (~8/9 and ~1/9), mainly by articleType
+     with meaningful Development duplicate/related-image groups kept disjoint
+  -> freeze development artifacts before instruction expansion; fit statistics on Train
   -> validate shared task, processor, and run configuration
   -> verify actual VLM inference and adapter-training feasibility
   -> evaluate floating-point and four-bit bases on development data
   -> pilot and select LoRA / QLoRA using training and validation only
-  -> freeze final configurations and evaluate all four conditions on held-out data
+  -> select decision policy and thresholds on Validation
+  -> freeze weights and the complete system, including unknown/rejection policy
+  -> recover exact sealed Test records for authorized final evaluation of all four conditions
   -> save predictions, quality/resource metrics, and reproducibility evidence
   -> report the main task result, supporting questions, and remaining errors
 ```
@@ -146,21 +151,29 @@ the validated merged Parquet file; the raw shards are retained for provenance an
 rebuilding. The merge retains all 11 columns and performs no label canonicalization,
 selection, or split assignment. The four prediction fields do not restrict its schema.
 Record corrupt/missing records, conflicting labels, grouping decisions, retained
-class support, and exclusions. Audit the `masterCategory` / `subCategory` /
-`articleType` hierarchy using relationships derived from candidate training data.
+class support, and exclusions within Development only after Test sealing. Audit the
+`masterCategory` / `subCategory` / `articleType` hierarchy using Development-derived
+relationships.
 These are related catalog levels, not independent visual capabilities. Predict all
 four fields explicitly; do not silently derive a predicted category from another
 predicted field during the main evaluation.
 
-Split related images before generating multiple instructions. Choose class subsets
-and normalization from candidate training data, apply fixed rules to the other
-partitions, and save exact membership. Use validation for selection; held-out test
-labels and outcomes must not guide prompts, mappings, exclusions, or hyperparameters.
+The [preparation policy](dataset.md#preparation-and-splitting-rules) owns selection,
+reproducibility, group constraints, and sealing restrictions. Future Development
+loaders must enforce membership before audits, previews, or model use. The two
+existing whole-source notebooks are historical pre-seal workflows; prose warnings
+do not enforce this boundary. Unique IDs alone do not protect against image
+duplicates, and Development-only grouping does not establish a duplicate-free Test
+boundary. Choose categorical policies using Development; fit learned statistics
+with Train only. Use Validation for selection and never Test for policy revision.
 
 One shared task contract must validate required keys, string types, allowed values,
 and abstention values across every condition. Preserve raw outputs and distinguish
-valid known predictions, valid abstentions, and invalid outputs. Catalog labels alone
-do not establish whether an image supports a field; the detailed protocol must
+valid known predictions, valid abstentions, and invalid outputs. A shared source-code
+decision layer owns supported-input checks and field/record rejection; known-label
+validation alone cannot establish unsupported-input detection. Preserve raw validation
+results separately from final policy outputs, with reasons in sidecars. Catalog
+labels alone do not establish whether an image supports a field; the detailed protocol must
 define how any small human-reviewed visibility subset is used.
 
 ### Actual-model feasibility gate
@@ -206,9 +219,12 @@ Optional adapter-target ablations and extra models can wait until the core resul
 
 The planned evaluation must distinguish structural validity from attribute correctness.
 Measure complete-record and per-field quality, parse/schema failures, invalid labels,
-and abstention with explicit denominators. Invalid outputs remain failures in the
-main task scores. Valid JSON or an accepted `unknown` value alone does not establish
-visual correctness, calibrated uncertainty, or readiness for unattended catalog use.
+and abstention with explicit denominators. Separate in-scope prediction from
+unsupported-input rejection, accounting for every sealed Test member, including
+unreadable/unscorable records. Invalid raw outputs remain failures in raw task
+scores even when final policy outputs differ. Valid JSON or an accepted `unknown`
+value alone does not establish visual correctness, calibrated uncertainty, or
+readiness for unattended catalog use.
 
 Record peak allocated/reserved GPU memory, training time and throughput, trainable
 parameters, adapter size, and final reconstruction/deployment footprint. Measure
@@ -232,6 +248,12 @@ exclude these generated artifacts. The canonical merged Parquet and merge manife
 use ignored `data/interim/`; this manifest records preservation/provenance, not split
 membership or a completed image-duplicate audit.
 
+Future Test sealing should store immutable membership metadata bound to that
+canonical artifact, not a physical Test Parquet by default. Development artifacts
+must identify their policy and Train/Validation membership versions. Keep these
+generated records ignored; the detailed requirements belong in
+[dataset.md](dataset.md#test-membership-and-logical-sealing).
+
 Each evidence-producing run must save its resolved configuration, data/model revisions
 or snapshot identifiers, exact split membership, vocabulary/manifest hashes, seeds,
 processor/generation settings, adapter/quantization settings, package builds, device
@@ -241,3 +263,8 @@ Distinguish adapter bytes from the base weights needed to reconstruct the model.
 Small intentional aggregate reports may enter Git after owner review; generated
 predictions and model/data artifacts remain local. The code MIT license does not
 replace third-party artifact terms.
+
+A future production extension could collect new rejected inputs for human review
+and separately authorized retraining with fresh evaluation data. This is documentation
+only: no production feedback loop or second model is implemented, and rejected
+records from the current Test set must not become training data.

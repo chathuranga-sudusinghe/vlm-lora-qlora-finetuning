@@ -1,12 +1,11 @@
 # Dataset and integrity policy
 
-**Status (2026-10-19):** source inspection (#22) and the four-field contract (#23)
-are completed. Issue #28 adds the canonical merge and saved-artifact inspection
-notebook, checked with synthetic records. The owner's saved execution outputs were
-reviewed on 2026-10-19: merge validation passed, and the saved table/image previews
-were inspected without rerunning real data. The evidence and its limits are recorded
-below. Owner acceptance, the full audit, final canonical vocabulary, exclusions,
-and split preparation remain future work.
+**Status (2026-10-20):** source inspection (#22), the four-field scope (#23), and
+canonical merge (#28 / PR #29) are completed. The saved execution evidence below
+remains historical. Issue #30 documents the owner's Test-first preparation policy
+in [DR-003](decisions/DR-003-sealed-test-development-policy.md). Test sealing,
+Development-only auditing, final vocabularies, and Train/Validation preparation
+are not implemented or executed by this documentation change.
 The [experiment plan](experiments.md) owns run budgets and evaluation.
 
 ## Selected source
@@ -116,11 +115,12 @@ Real-data execution requires exact commands, impact explanation, and explicit ow
 authorization under [AGENTS.md](../AGENTS.md). Clear notebook outputs and execution
 counts before commit; keep datasets and generated manifests out of Git.
 
-After merged-data inspection, agree a separate preparation scope covering product
-and image-duplicate grouping, near duplicates/variants, conflicting-label and
-unreadable-image policy, reproducible group-disjoint partitions, training-only
-vocabulary/eligibility decisions, and held-out test protection. No split ratios or
-partitions are selected by #28. The proposed rules below apply to that later work.
+Issue #28 did not select split ratios or create partitions. The later owner-selected
+[preparation policy](#preparation-and-splitting-rules) seals Test membership first,
+then restricts detailed audits and task-policy decisions to Development. The
+inspection seed 42 above is not an agreed split seed. After sealing, do not rerun
+the full-source overview or merge/inspection workflows: they expose Test content.
+Their Markdown warnings are documentation; runtime access guards remain future work.
 
 ### Saved execution evidence — 2026-10-19
 
@@ -190,7 +190,7 @@ identifiers only for provenance and grouping.
 
 The hierarchy runs from `masterCategory` to `subCategory` to `articleType`, for
 example `Apparel` / `Topwear` / `Shirts`. Derive the allowed category triples from
-the candidate training partition, restricted by its frozen eligibility rules; audit
+Development, restricted by its versioned eligibility rules; audit
 whether article types determine their parent categories rather than assuming so.
 Keep all four requested predictions but report category dependence and hierarchy
 consistency. Do not describe these related category levels as independent visual
@@ -215,8 +215,9 @@ reserved string `unknown`. Key order and JSON whitespace do not affect correctne
 Extra/missing/duplicate keys, non-string values, unrecognized labels, Markdown fences,
 and prose outside the object fail the proposed contract. Preserve the raw generated
 answer; do not silently repair it or infer missing fields. Score generated answer
-tokens rather than the echoed prompt. [experiments.md](experiments.md#evaluation)
-defines how invalid records affect metrics.
+tokens rather than the echoed prompt. Preserve any separately declared decision-policy
+output alongside the raw answer and its validation result, never in place of them.
+[experiments.md](experiments.md#evaluation) defines their separate metrics.
 
 ### Canonical vocabulary and abstention
 
@@ -225,20 +226,34 @@ Canonical known-label strings retain source spelling and capitalization, as in
 `Apparel`, `Topwear`, `Shirts`, and `Blue`. Propose trimming surrounding whitespace
 from source labels only; do not case-fold or lowercase the target vocabulary.
 Any additional alias mapping requires explicit recording and review. Do not assume
-spelling, capitalization, or punctuation changes preserve meaning. Derive allowed
-labels for all four fields, aliases, class selection, eligibility rules, and category
-triples from the candidate training partition only, then freeze their versions/hashes
-before evaluation. Apply the same frozen rules to every split.
+spelling, capitalization, or punctuation changes preserve meaning. Select allowed
+labels for all four fields, aliases, supported article types, eligibility rules, and
+category triples using Development only. Version these policies during development
+and freeze their versions/hashes before final Test access. Apply the frozen rules
+without Test-driven changes. These categorical policy decisions differ from learned
+preprocessing statistics, which must be fitted on Train only.
 Reserve the exact lowercase string `unknown` separately from known classes and check
 for label collisions. Dataset-label normalization does not repair generated labels;
 predictions must use the exact canonical strings required by the contract, including
 capitalization and without silently trimming generated string values.
 
-`unknown` means insufficient visual evidence for that field. It is a valid abstention,
-not a missing key, malformed answer, missing source label, or out-of-vocabulary class.
-Exclude missing required metadata using a declared rule; handle out-of-scope classes
-with the frozen eligibility policy and report coverage/exclusions. Do not relabel
-either case as visually unknown merely to retain the record.
+The planned source-code inference/decision layer must explicitly define when to
+return field-level `unknown` or reject a record, including insufficient visual
+evidence and detected unsupported/out-of-scope input. Keep reasons in sidecar
+records, not additional JSON keys. A new product from a supported class is still
+in scope; a wrong known-label prediction is a prediction error, not automatically
+an unsupported-input event. A vocabulary-membership check cannot detect an
+unsupported product that the model assigns a valid known label. A rejection method
+requires Development-only design and validation, with thresholds selected on
+Validation; no reliable detector or calibrated confidence is established here.
+
+Distinguish visual insufficiency, outside-project class support, missing reference
+metadata, and malformed generation. Missing metadata is not evidence for `unknown`.
+Apply the frozen reference-eligibility rule at final evaluation and account for every
+Test member, including unsupported and unscorable records; do not delete them to
+improve scores. An invalid raw answer remains structurally invalid even if the
+decision layer emits a safe fallback. Rejection and raw/final scoring are specified
+in [the evaluation policy](experiments.md#decision-policy-and-unsupported-input-evaluation).
 
 Catalog metadata does not supply independent visibility annotations. Derive ordinary
 training answers from eligible catalog labels after splitting, but do not fabricate
@@ -249,17 +264,18 @@ or calibrated uncertainty. A separate small held-out review can assess visual su
 under the [evaluation protocol](experiments.md#evaluation).
 
 Catalog labels are imperfect image-grounded annotations. Review missing labels,
-ambiguous color names, class frequencies, and image/label disagreement before fixing
-the mapping and class subset. Freeze mappings before test evaluation.
+ambiguous color names, class frequencies, and image/label disagreement within
+Development before fixing the mapping and class subset. Test never guides those choices.
 
 Do not train the first version to guess brand, season, year, intended gender,
 material composition, or occasion from these low-resolution images. Fine texture,
 small logos, and subtle material details are outside the reliable initial scope.
 
-## Proposed dataset audit
+## Development-only audit
 
-The future audit should produce one local report plus machine-readable record-level
-decisions, not an additional data platform:
+After Test is sealed, the future audit uses only Development records. Produce one
+local report plus machine-readable record-level decisions, not an additional data
+platform. Source checksums identify provenance without inspecting Test labels/images.
 
 | Area | Required evidence |
 |---|---|
@@ -271,42 +287,95 @@ decisions, not an additional data platform:
 | Selection | Retained/excluded counts, record IDs, reasons, and covered population |
 | Reproduction | Audit/preparation configuration, seed, mapping and manifest identifiers |
 
-Structural inspection and grouping cover the source before partitioning. Keep global
-audit summaries descriptive; task vocabulary and class-selection choices use candidate
-training data only. Define conflict/exclusion rules before model evaluation. Do not
-drop test errors or edit catalog labels after inspecting model predictions.
+All image, label, frequency, conflict, and grouping investigations in this table are
+Development-only. Unique IDs identify records; assigning every unique ID its own
+group provides no image-duplicate protection. Discover meaningful exact-duplicate,
+related-product, variant, and near-duplicate groups where evidence supports them.
+Define conflict/exclusion rules before evaluating models. Do not inspect Test to
+complete this audit or edit catalog labels after inspecting final predictions.
 
 ## Preparation and splitting rules
 
-1. Establish the local snapshot's provenance and record checksums before preparation.
-   Validate declared versus actual schema, row counts, image decoding, and required
-   labels under an owner-approved preparation/validation command. Save audit counts
-   and record-level decisions, distinguishing source facts from planned checks.
-2. Define structural exclusions before evaluating models. Reject unreadable images
-   and examples missing required labels; record the exclusion reasons and counts.
-3. Identify exact image duplicates and product identifiers before assigning splits.
-   Document how related variants and near duplicates are handled.
-4. Assign all members of a product/duplicate group to one candidate partition with
-   a recorded seed. Do this before instruction expansion and class-frequency-based
-   task selection. A product ID alone does not prove that near duplicates are absent.
-5. Select eligible article types and derive label mappings from the training
-   candidate partition. Apply the same frozen eligibility/normalization rules to
-   validation and test; do not change them based on those partitions' frequencies
-   or outcomes. Sample within eligible partitions with a fixed, recorded procedure.
-6. Generate multiple instruction examples only after image groups have been split.
-7. Keep held-out test membership fixed. Do not tune prompts, thresholds, settings,
-   preprocessing, or label rules from its outcomes. A small visibility/error-review
-   subset may be drawn from the frozen test partition; it is not a tuning set.
-8. Save source shard/row identifiers, product IDs, group assignments, split membership,
-   provenance, transformations, exclusions, and hashes in the local manifest. Bind
-   membership to the vocabulary and preparation-policy versions. Verify group
-   disjointness, unique membership, valid image references, and reproducibility
-   before training; test these rules with synthetic fixtures during implementation.
-   No split-preparation implementation, validated split, or split manifest exists
-   yet. The merged-source manifest above is not a split manifest.
+The owner-selected sequence is Test first, then Development policy design, then
+Train/Validation. It uses a random same-catalog holdout, not chronological or
+newest-data splitting. The immutable canonical source retains all 44,072 rows and
+all original values; exclusions apply only to derived development views.
+Test members are never removed; final evaluation assigns frozen reference statuses
+under [the evaluation policy](experiments.md#evaluation).
 
-The proposed first-run sample budget is in [experiments.md](experiments.md); it is
-not a claim that the dataset has already been filtered or split.
+### Test membership and logical sealing
+
+1. Verify canonical snapshot/output identity and the record-ID/count prerequisites
+   needed for reproducible selection. This permits integrity checks, not a new
+   global image/label audit. Do not filter, normalize, or repair the source first.
+2. Select approximately 10% of source records as Test using a fixed-seed random
+   holdout, leaving approximately 90% as Development. Fix the seed before selection;
+   do not try alternative seeds to improve class coverage or observed balance.
+3. Save immutable Test membership metadata rather than a separate physical Test
+   Parquet. Bind exact IDs and canonical row references to the source snapshot and
+   output checksum, ordered input-ID identity, split algorithm and implementation
+   version, random generator/version, seed, fraction, rounding rule, actual counts,
+   and deterministic membership manifest/hash. Seed alone is insufficient. Record
+   the Development complement and verify disjoint, exhaustive, unique membership.
+   Any physical Test copy requires a documented technical reason and owner agreement.
+4. Seal this membership immediately. Later sessions load and verify it, rather than
+   regenerate it. A changed source, identity mismatch, or conflicting existing seal
+   must stop execution. Changing task policy never changes Test membership.
+
+Logical sealing is a workflow restriction, not encryption of the local canonical
+file. Development loaders must select the Development complement before exposing
+records to audit, preview, sampling, or training code. Keep Test images/metadata,
+class frequencies, plots, and content-derived diagnostics unavailable to those
+workflows. No Test-driven rebalancing, repairs, exclusions, or policy decisions are
+allowed after sealing. A manifest integrity check need not expose Test content.
+The exact algorithm, seed, serialization, rounding rule, and access-guard design
+remain unresolved implementation choices requiring owner agreement. No membership
+manifest, sealed partition, or enforcement code is created by issue #30.
+
+### Development policies and Train/Validation
+
+Use the [Development-only audit](#development-only-audit) to define and version class
+support, vocabularies, normalization, eligibility, hierarchy, duplicate/conflict
+handling, and preprocessing policies. Unsupported classes remain identifiable for
+rejection evaluation rather than being silently converted to known classes.
+
+Split Development into approximately **8/9 Train and 1/9 Validation**, targeting
+approximately 80%/10% of the original source before exclusions and group constraints.
+Use `articleType` as the main stratification variable and monitor the other three
+target distributions. Do not force sparse joint stratification across all four
+fields. Keep every discovered meaningful Development duplicate/related-image group
+wholly in Train or Validation, before generating multiple instruction examples.
+
+Agree rare-class, conflicting-label group, and imperfect-balance handling from
+Development before accepting a split. Group isolation takes priority over exact
+ratios; do not split a duplicate group to improve balance. Record unresolved cases
+for owner decision rather than silently disabling grouping or dropping classes.
+Save exact memberships, group assignments, policy versions/hashes, rounding,
+actual counts, distributions, exclusions with IDs/reasons, and reproducibility checks.
+Any policy revision must be versioned and its downstream development artifacts
+revalidated while Test membership remains fixed.
+
+Fit learned preprocessing statistics on Train only. Fit/fine-tune weights with
+Train; use Validation for prompts, thresholds, hyperparameters, checkpoints, and
+model/configuration selection. Because categorical task policies can use the whole
+Development pool, Validation is a development selection set, not an independent
+assessment of the entire policy-design process. Experiment sample/update budgets
+are separate from full partition membership; [experiments.md](experiments.md) owns them.
+
+### Final access and interpretation limits
+
+Only after the [complete system freeze](experiments.md#final-freeze-and-test-access)
+may an explicitly authorized final evaluation recover the exact sealed Test records
+from the unchanged canonical source. Apply frozen rules, account for every member,
+and preserve failures. Final outcomes do not reopen development or membership selection.
+
+The source and sampled images were inspected before this policy was adopted, as
+recorded above. The seal is prospective; this is not a claim of never-inspected data.
+Random Test selection before Development-only duplicate auditing does **not** prove
+duplicate-free Development/Test boundaries or evaluation on wholly unseen products.
+Do not silently add a global Test audit to claim that guarantee. This is a
+pseudo-future same-catalog holdout: it does not establish future-domain robustness,
+chronological generalization, or absence of public-model pretraining exposure.
 
 ## Provenance and use terms
 
