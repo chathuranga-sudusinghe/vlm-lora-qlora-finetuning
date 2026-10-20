@@ -206,7 +206,8 @@ README.md                     Orientation, current status, and repository map
 pyproject.toml                Dependencies, console entry point, and tool configuration
 uv.lock                       Locked CPU/CUDA dependency graph
 .python-version               Python version selection
-src/vlm_finetuning/            Device diagnostics and CLI introduced by issue #6
+src/vlm_finetuning/            Device diagnostics and explicit inference prototype
+src/baseline_inference.py     Thin compatibility entry point for the prototype
 tests/                        Synthetic unit/integration tests introduced by issue #6
 .github/workflows/ci.yml       Merged quality/unit and CPU integration jobs (#7)
 docs/
@@ -224,8 +225,11 @@ docs/
 ```
 
 This map includes the merged foundation, diagnostics, and issue #7 workflow.
-The existing `src/baseline_inference.py` remains a standalone local experiment for
-later migration; it is not the controlled structured baseline. Work is separated as follows:
+Issue #33 migrates the earlier free-form experiment into the package, retaining
+`src/baseline_inference.py` as a thin, import-safe entry point. It requires explicit
+image/device arguments and remains a prototype, not the controlled four-field
+baseline. See the [prototype guide](docs/development.md#inference-prototype) for
+boundaries and help commands. Work is separated as follows:
 
 | Issue | Paths and status |
 |---|---|
@@ -234,6 +238,7 @@ later migration; it is not the controlled structured baseline. Work is separated
 | #5: dependency tooling, merged; owner-run validation recorded | `pyproject.toml`, `uv.lock`, `.python-version`, ignore rules, minimal package initialization, `data/README.md`, setup guidance |
 | #6: diagnostics and tests, merged; local validation and review recorded | `src/vlm_finetuning/`, `tests/`, diagnostic entry-point/type-check configuration, `docs/development.md`, usage/status guidance |
 | #7: CPU continuous integration merged; hosted checks, cold/warm caches, and dependency-file invalidation observed | `.github/workflows/ci.yml`, relevant development/status documentation |
+| #33: inference prototype migration; actual-model execution unverified | `src/baseline_inference.py`, `src/vlm_finetuning/prototype_inference.py`, mocked unit tests, quality-check scope, and prototype guidance |
 
 Local drafts are not part of an issue's commit merely because they exist in the
 working directory. Preserve them and stage only files assigned to the active issue.

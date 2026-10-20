@@ -109,10 +109,15 @@ to review those outputs. Issue #28 / PR #29 is merged. Issue #30 documents the
 Test-first policy, but no Test seal, Development selector, preparation code, or
 notebook execution guard is implemented by that documentation change.
 
-The owner's existing `src/baseline_inference.py` remains a standalone experiment.
-Its migration and quality-check scope will be reviewed separately. It is not yet
-the shared structured baseline. The planned device diagnostics do not validate its
-model inference behavior or establish VLM/quantization/training feasibility.
+Issue #33 moves the earlier free-form experiment into
+`src/vlm_finetuning/prototype_inference.py`; `src/baseline_inference.py` is a thin
+compatibility entry point. Explicit calls validate the image and requested device
+before pretrained loading; imports and help do not load optional ML libraries.
+CUDA never silently falls back to CPU. Mocked unit tests cover orchestration and
+failure handling, not actual-model compatibility or quality. This prototype does
+not implement the controlled four-field baseline, rejection policy, or Test access
+guards. Its [development guide](development.md#inference-prototype) owns invocation
+and limitations. Device diagnostics still do not establish VLM/training feasibility.
 
 ## Intended pipeline
 
